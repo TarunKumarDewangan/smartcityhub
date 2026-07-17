@@ -20,7 +20,7 @@ const ManageServicesScreen = ({ navigation }) => {
   const fetchMyServices = async () => {
     try {
       const response = await apiClient.get('/my-services');
-      setServices(response.data);
+      setServices(Array.isArray(response.data) ? response.data : (response.data?.data || []));
     } catch (e) {
       console.error(e);
       Alert.alert('Error', 'Failed to fetch your services.');

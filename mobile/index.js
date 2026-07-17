@@ -1,6 +1,12 @@
 import 'react-native-gesture-handler';
 import { registerRootComponent } from 'expo';
+import { LogBox } from 'react-native';
 import ErrorDiagnostics from './src/utils/ErrorDiagnostics';
+
+// Ignore harmless Expo development warnings/errors
+LogBox.ignoreLogs([
+  "Call to function 'ExpoKeepAwake.activate' has been rejected",
+]);
 
 // Register global JS error handling as early as possible
 ErrorDiagnostics.setGlobalErrorHandler();

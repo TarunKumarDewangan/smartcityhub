@@ -4,42 +4,50 @@ namespace App\Http\Controllers;
 
 use App\Models\BloodBank;
 use Illuminate\Http\Request;
+use App\Http\Requests\UpdateBloodBankRequest;
+use App\Http\Resources\BloodBankResource;
 
 class BloodBankController extends Controller
 {
     public function index()
     {
-        return BloodBank::all();
+        return BloodBankResource::collection(BloodBank::orderBy('name')->get());
     }
 
     public function myBloodBank(Request $request)
     {
         $bloodBank = BloodBank::where('user_id', $request->user()->id)->first();
-        
+
         if (!$bloodBank) {
             return response()->json([
-                'id' => null,
-                'name' => '',
-                'address' => '',
-                'contact' => '',
+                'id'                   => null,
+                'name'                 => '',
+                'address'              => '',
+                'contact'              => '',
                 'blood_groups_available' => '',
-                'user_id' => $request->user()->id
+                'user_id'              => $request->user()->id,
             ]);
         }
-        
-        return $bloodBank;
+
+        return new BloodBankResource($bloodBank);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateBloodBankRequest $request, $id)
     {
         $bloodBank = BloodBank::findOrFail($id);
-        
-        // Ensure user owns this blood bank
-        if ($bloodBank->user_id !== $request->user()->id && $request->user()->role !== 'Admin') {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $bloodBank->update($request->validated());
 
-        $bloodBank->update($request->all());
-        return response()->json(['message' => 'Blood Bank updated successfully', 'blood_bank' => $bloodBank]);
+        return response()->json([
+            'message'    => 'Blood Bank updated successfully',
+            'blood_bank' => new BloodBankResource($bloodBank),
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $bloodBank = BloodBank::findOrFail($id);
+        $bloodBank->delete();
+
+        return response()->json(['message' => 'Blood Bank deleted successfully']);
     }
 }

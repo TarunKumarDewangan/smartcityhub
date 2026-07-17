@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Ambulance;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreAmbulanceRequest;
+use App\Http\Requests\UpdateAmbulanceRequest;
+use App\Http\Resources\AmbulanceResource;
 
 class AmbulanceController extends Controller
 {
@@ -22,34 +25,19 @@ class AmbulanceController extends Controller
 
     public function index()
     {
-        return Ambulance::all();
+        return AmbulanceResource::collection(Ambulance::all());
     }
 
-    public function store(Request $request)
+    public function store(StoreAmbulanceRequest $request)
     {
-        $this->checkAdmin();
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'contact' => 'required|string',
-            'vehicle_number' => 'nullable|string|unique:ambulances',
-            'status' => 'required|in:Available,Busy',
-        ]);
-
-        return Ambulance::create($validated);
+        $ambulance = Ambulance::create($request->validated());
+        return new AmbulanceResource($ambulance);
     }
 
-    public function update(Request $request, Ambulance $ambulance)
+    public function update(UpdateAmbulanceRequest $request, Ambulance $ambulance)
     {
-        $this->checkAdmin();
-        $validated = $request->validate([
-            'name' => 'string',
-            'contact' => 'string',
-            'vehicle_number' => 'nullable|string|unique:ambulances,vehicle_number,' . $ambulance->id,
-            'status' => 'in:Available,Busy',
-        ]);
-
-        $ambulance->update($validated);
-        return $ambulance;
+        $ambulance->update($request->validated());
+        return new AmbulanceResource($ambulance);
     }
 
     public function destroy(Ambulance $ambulance)

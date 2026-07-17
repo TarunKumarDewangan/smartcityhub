@@ -26,7 +26,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
   const fetchProduct = async () => {
     try {
       const response = await apiClient.get(`/products/${productId}`);
-      setProduct(response.data);
+      setProduct(response.data?.data || response.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -37,7 +37,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
   const fetchRatings = async () => {
     try {
       const response = await apiClient.get(`/ratings?ratable_id=${productId}&ratable_type=product`);
-      setRatings(response.data);
+      setRatings(Array.isArray(response.data) ? response.data : (response.data?.data || []));
     } catch (e) {
       console.error(e);
     }
@@ -115,7 +115,15 @@ const ProductDetailScreen = ({ route, navigation }) => {
             </View>
           </View>
           
-          <Text style={[styles.name, { color: theme.text }]}>{product.name}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={[styles.name, { color: theme.text }]}>{product.name}</Text>
+            {product.is_featured && (
+              <View style={styles.topSellerBadge}>
+                <Star size={10} color="#fff" fill="#fff" />
+                <Text style={styles.topSellerText}>Top Seller</Text>
+              </View>
+            )}
+          </View>
           <Text style={[styles.description, { color: theme.secondaryText }]}>{product.description}</Text>
           
           <View style={[styles.divider, { backgroundColor: theme.divider }]} />
@@ -225,7 +233,9 @@ const styles = StyleSheet.create({
   ratingBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, borderWidth: 1 },
   ratingValue: { marginLeft: 4, fontSize: 13, fontWeight: 'bold' },
   ratingCount: { marginLeft: 3, fontSize: 11 },
-  name: { fontSize: 20, fontWeight: 'bold', marginBottom: 8 },
+  name: { fontSize: 20, fontWeight: 'bold', marginBottom: 8, flexShrink: 1 },
+  topSellerBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f59e0b', paddingHorizontal: 6, paddingVertical: 3, borderRadius: 8, marginLeft: 8, marginBottom: 8 },
+  topSellerText: { color: '#fff', fontSize: 10, fontWeight: 'bold', marginLeft: 3 },
   description: { fontSize: 13, lineHeight: 20, marginBottom: 15 },
   divider: { height: 1, marginVertical: 15 },
   sectionTitle: { fontSize: 16, fontWeight: 'bold' },

@@ -23,6 +23,10 @@ class GlobalSearchController extends Controller
 
         $hospitals = Hospital::where('name', 'LIKE', "%{$query}%")
             ->orWhere('address', 'LIKE', "%{$query}%")
+            ->orWhere(function ($q) use ($query) {
+                $q->where('has_emergency', true)
+                  ->where('emergency_services', 'LIKE', "%{$query}%");
+            })
             ->get();
 
         $shops = Shop::where('is_approved', true)

@@ -4,58 +4,48 @@ namespace App\Http\Controllers;
 
 use App\Models\Service;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreServiceRequest;
+use App\Http\Requests\UpdateServiceRequest;
+use App\Http\Resources\ServiceResource;
 
 class ServiceController extends Controller
 {
     public function index(Request $request)
     {
-        return Service::where('is_approved', true)->get();
+        $query = Service::where('is_approved', true)->where('is_available', true);
+
+        if ($request->has('page') || $request->has('paginate')) {
+            $perPage = $request->input('per_page', 15);
+            return ServiceResource::collection($query->paginate($perPage));
+        }
+
+        return ServiceResource::collection($query->get());
     }
 
     public function myServices(Request $request)
     {
-        return Service::where('provider_id', $request->user()->id)->get();
+        return ServiceResource::collection(Service::where('provider_id', $request->user()->id)->get());
     }
 
     public function show(Service $service)
     {
-        return $service->load('provider');
+        return new ServiceResource($service->load('provider'));
     }
 
-    public function store(Request $request)
+    public function store(StoreServiceRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'category' => 'required|string',
-            'area' => 'required|string',
-            'contact_phone' => 'required|string',
-            'description' => 'nullable|string',
-            'is_available' => 'boolean'
-        ]);
-
+        $validated = $request->validated();
         $validated['provider_id'] = $request->user()->id;
         $validated['is_available'] = $request->has('is_available') ? $request->is_available : true;
         
-        return Service::create($validated);
+        $service = Service::create($validated);
+        return new ServiceResource($service);
     }
 
-    public function update(Request $request, Service $service)
+    public function update(UpdateServiceRequest $request, Service $service)
     {
-        if ($service->provider_id !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validated = $request->validate([
-            'name' => 'string',
-            'category' => 'string',
-            'area' => 'string',
-            'contact_phone' => 'string',
-            'description' => 'nullable|string',
-            'is_available' => 'boolean'
-        ]);
-
-        $service->update($validated);
-        return $service;
+        $service->update($request->validated());
+        return new ServiceResource($service);
     }
 
     public function destroy(Request $request, Service $service)

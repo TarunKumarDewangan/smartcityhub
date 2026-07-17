@@ -16,6 +16,8 @@ class Shop extends Model
         'owner_id',
         'latitude',
         'longitude',
+        'opening_days',
+        'opening_hours',
     ];
 
     protected $appends = ['average_rating', 'rating_count'];
@@ -37,12 +39,20 @@ class Shop extends Model
 
     public function getAverageRatingAttribute()
     {
+        if (array_key_exists('ratings_avg_rating', $this->attributes)) {
+            return $this->attributes['ratings_avg_rating'] !== null 
+                ? round($this->attributes['ratings_avg_rating'], 1) 
+                : 2.5;
+        }
         $avg = $this->ratings()->avg('rating');
         return $avg ? round($avg, 1) : 2.5; // Default to 2.5 as requested
     }
 
     public function getRatingCountAttribute()
     {
+        if (array_key_exists('ratings_count', $this->attributes)) {
+            return (int) $this->attributes['ratings_count'];
+        }
         return $this->ratings()->count();
     }
 }

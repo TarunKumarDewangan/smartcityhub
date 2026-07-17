@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, StatusBar, Linking, Share, Modal, TextInput } from 'react-native';
-import { ShoppingBag, ChevronLeft, Star, Phone, MapPin, Share2, ArrowRight, X, User } from 'lucide-react-native';
+import { ShoppingBag, ChevronLeft, Star, Phone, MapPin, Share2, ArrowRight, X, User, Clock } from 'lucide-react-native';
 import apiClient from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -26,7 +26,7 @@ const ShopDetailScreen = ({ route, navigation }) => {
   const fetchShopDetails = async () => {
     try {
       const response = await apiClient.get(`/shops/${shopId}`);
-      setShop(response.data);
+      setShop(response.data?.data || response.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -37,7 +37,7 @@ const ShopDetailScreen = ({ route, navigation }) => {
   const fetchRatings = async () => {
     try {
       const response = await apiClient.get(`/ratings?ratable_id=${shopId}&ratable_type=shop`);
-      setRatings(response.data);
+      setRatings(Array.isArray(response.data) ? response.data : (response.data?.data || []));
     } catch (e) {
       console.error(e);
     }
@@ -115,6 +115,12 @@ const ShopDetailScreen = ({ route, navigation }) => {
         <View style={[styles.priceBadge, { backgroundColor: theme.card }]}>
           <Text style={[styles.priceText, { color: theme.primary }]}>₹{item.price}</Text>
         </View>
+        {item.is_featured && (
+          <View style={styles.topSellerBadge}>
+            <Star size={9} color="#fff" fill="#fff" />
+            <Text style={styles.topSellerText}>Top Seller</Text>
+          </View>
+        )}
       </View>
       <View style={styles.productInfo}>
         <Text style={[styles.productName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
@@ -199,6 +205,15 @@ const ShopDetailScreen = ({ route, navigation }) => {
                 <MapPin size={16} color={theme.secondaryText} />
                 <Text style={[styles.addressText, { color: theme.secondaryText }]} numberOfLines={2}>{shop.address}</Text>
             </View>
+
+            {(shop.opening_days || shop.opening_hours) && (
+                <View style={[styles.locationCard, { marginTop: 8 }]}>
+                    <Clock size={16} color={theme.secondaryText} />
+                    <Text style={[styles.addressText, { color: theme.secondaryText }]} numberOfLines={2}>
+                        {[shop.opening_days, shop.opening_hours].filter(Boolean).join(' • ')}
+                    </Text>
+                </View>
+            )}
         </View>
 
         {/* Compact Feedback Row */}
@@ -375,6 +390,8 @@ const styles = StyleSheet.create({
   noImage: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   priceBadge: { position: 'absolute', bottom: 4, right: 4, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 6, elevation: 1 },
   priceText: { fontWeight: 'bold', fontSize: 9 },
+  topSellerBadge: { position: 'absolute', top: 4, left: 4, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f59e0b', paddingHorizontal: 5, paddingVertical: 2, borderRadius: 6 },
+  topSellerText: { color: '#fff', fontSize: 8, fontWeight: 'bold', marginLeft: 2 },
   
   productInfo: { flex: 1, marginLeft: 12, justifyContent: 'center' },
   productName: { fontSize: 15, fontWeight: 'bold' },

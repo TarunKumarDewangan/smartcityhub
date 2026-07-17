@@ -4,40 +4,58 @@ namespace App\Http\Controllers;
 
 use App\Models\Shop;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreShopRequest;
+use App\Http\Requests\UpdateShopRequest;
+use App\Http\Resources\ShopResource;
+use App\Http\Resources\ProductResource;
 
 class ShopController extends Controller
 {
     public function index(Request $request)
     {
-        return Shop::where('is_approved', true)->with('products')->get();
+        $query = Shop::where('is_approved', true)
+            ->withAvg('ratings', 'rating')
+            ->withCount('ratings')
+            ->with(['products' => function ($query) {
+                $query->withAvg('ratings', 'rating')
+                      ->withCount('ratings');
+            }]);
+
+        if ($request->has('page') || $request->has('paginate')) {
+            $perPage = $request->input('per_page', 15);
+            return ShopResource::collection($query->paginate($perPage));
+        }
+
+        return ShopResource::collection($query->get());
     }
 
     public function myShops(Request $request)
     {
-        return Shop::where('owner_id', $request->user()->id)->get();
+        $shops = Shop::where('owner_id', $request->user()->id)
+            ->withAvg('ratings', 'rating')
+            ->withCount('ratings')
+            ->get();
+        return ShopResource::collection($shops);
     }
 
     public function show(Shop $shop)
     {
-        return $shop->load('products');
+        $shop->loadAvg('ratings', 'rating')->loadCount('ratings');
+        return new ShopResource($shop->load(['products' => function ($query) {
+            $query->orderByDesc('is_featured')
+                  ->withAvg('ratings', 'rating')
+                  ->withCount('ratings');
+        }]));
     }
 
     public function products(Shop $shop)
     {
-        return $shop->products;
+        return ProductResource::collection($shop->products()->orderByDesc('is_featured')->get());
     }
 
-    public function store(Request $request)
+    public function store(StoreShopRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'category' => 'required|string',
-            'description' => 'nullable|string',
-            'address' => 'required|string',
-            'contact_phone' => 'required|string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-        ]);
+        $validated = $request->validated();
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('shops', 'public');
@@ -45,24 +63,13 @@ class ShopController extends Controller
         }
 
         $validated['owner_id'] = $request->user()->id;
-        return Shop::create($validated);
+        $shop = Shop::create($validated);
+        return new ShopResource($shop);
     }
 
-    public function update(Request $request, Shop $shop)
+    public function update(UpdateShopRequest $request, Shop $shop)
     {
-        if ($shop->owner_id !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validated = $request->validate([
-            'name' => 'string',
-            'category' => 'string',
-            'description' => 'nullable|string',
-            'address' => 'string',
-            'contact_phone' => 'string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-        ]);
+        $validated = $request->validated();
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('shops', 'public');
@@ -70,7 +77,7 @@ class ShopController extends Controller
         }
 
         $shop->update($validated);
-        return $shop;
+        return new ShopResource($shop);
     }
 
     public function destroy(Request $request, Shop $shop)

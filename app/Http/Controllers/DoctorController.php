@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Doctor;
 use App\Models\Hospital;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreDoctorRequest;
+use App\Http\Requests\UpdateDoctorRequest;
 
 class DoctorController extends Controller
 {
@@ -19,7 +21,7 @@ class DoctorController extends Controller
         return $hospital->doctors;
     }
 
-    public function store(Request $request)
+    public function store(StoreDoctorRequest $request)
     {
         $hospital = Hospital::where('user_id', $request->user()->id)->first();
         
@@ -27,15 +29,7 @@ class DoctorController extends Controller
             return response()->json(['message' => 'No hospital assigned'], 404);
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'specialty' => 'required|string',
-            'type' => 'required|in:Staff,Consultant,Outside',
-            'is_available' => 'boolean',
-            'visiting_days' => 'nullable|string',
-            'visiting_hours' => 'nullable|string',
-        ]);
-
+        $validated = $request->validated();
         $validated['hospital_id'] = $hospital->id;
         
         $doctor = Doctor::create($validated);
@@ -46,40 +40,25 @@ class DoctorController extends Controller
         ]);
     }
 
-    public function update(Request $request, Doctor $doctor)
+    public function update(UpdateDoctorRequest $request, Doctor $hospitalDoctor)
     {
-        $hospital = Hospital::where('user_id', $request->user()->id)->first();
-        
-        if (!$hospital || $doctor->hospital_id !== $hospital->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validated = $request->validate([
-            'name' => 'string',
-            'specialty' => 'string',
-            'type' => 'in:Staff,Consultant,Outside',
-            'is_available' => 'boolean',
-            'visiting_days' => 'nullable|string',
-            'visiting_hours' => 'nullable|string',
-        ]);
-
-        $doctor->update($validated);
+        $hospitalDoctor->update($request->validated());
 
         return response()->json([
             'message' => 'Doctor updated successfully',
-            'doctor' => $doctor
+            'doctor' => $hospitalDoctor
         ]);
     }
 
-    public function destroy(Request $request, Doctor $doctor)
+    public function destroy(Request $request, Doctor $hospitalDoctor)
     {
         $hospital = Hospital::where('user_id', $request->user()->id)->first();
         
-        if (!$hospital || $doctor->hospital_id !== $hospital->id) {
+        if (!$hospital || $hospitalDoctor->hospital_id !== $hospital->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $doctor->delete();
+        $hospitalDoctor->delete();
 
         return response()->json(['message' => 'Doctor deleted successfully']);
     }

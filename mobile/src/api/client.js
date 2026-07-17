@@ -2,12 +2,19 @@ import axios from 'axios';
 import Constants from 'expo-constants';
 
 // --- CONFIGURATION ---
-const IS_EMULATOR = false; // Set to false for production APK
-const PC_IP = '192.168.29.107'; 
+const getApiBaseUrl = () => {
+  if (__DEV__) {
+    const hostUri = Constants.expoConfig?.hostUri;
+    if (hostUri) {
+      const ip = hostUri.split(':')[0];
+      return `http://${ip}:8001/api`;
+    }
+    return 'http://10.0.2.2:8001/api';
+  }
+  return 'https://api.businesstradecore.in/api';
+};
 
-const API_BASE_URL = IS_EMULATOR 
-  ? 'http://10.0.2.2:8001/api' 
-  : 'https://api.businesstradecore.in/api';
+const API_BASE_URL = getApiBaseUrl();
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -17,6 +24,26 @@ const apiClient = axios.create({
     'Accept': 'application/json',
   },
 });
+
+let unauthorizedCallback = null;
+
+export const registerUnauthorizedCallback = (callback) => {
+  unauthorizedCallback = callback;
+};
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response && error.response.status === 401) {
+      const isLogoutRequest = error.config?.url?.endsWith('/logout');
+      const hasAuth = error.config?.headers?.['Authorization'] || error.config?.headers?.Authorization;
+      if (hasAuth && !isLogoutRequest && unauthorizedCallback) {
+        await unauthorizedCallback();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const setAuthToken = (token) => {
   if (token) {

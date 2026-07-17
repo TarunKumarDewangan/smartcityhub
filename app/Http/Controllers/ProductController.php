@@ -3,28 +3,35 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Shop;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
+use App\Http\Requests\DestroyProductRequest;
+use App\Http\Resources\ProductResource;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Product::all();
+        $query = Product::query();
+
+        if ($request->has('page') || $request->has('paginate')) {
+            $perPage = $request->input('per_page', 15);
+            return ProductResource::collection($query->paginate($perPage));
+        }
+
+        return ProductResource::collection($query->get());
     }
 
     public function show(Product $product)
     {
-        return $product->load('shop');
+        return new ProductResource($product->load('shop'));
     }
 
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        $validated = $request->validate([
-            'shop_id' => 'required|exists:shops,id',
-            'name' => 'required|string',
-            'price' => 'required|numeric',
-            'description' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('products', 'public');
@@ -36,21 +43,13 @@ class ProductController extends Controller
             $validated['image_url_2'] = asset('storage/' . $path2);
         }
 
-        return Product::create($validated);
+        $product = Product::create($validated);
+        return new ProductResource($product);
     }
 
-    public function update(Request $request, Product $product)
+    public function update(UpdateProductRequest $request, Product $product)
     {
-        $shop = $product->shop;
-        if ($shop->owner_id !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validated = $request->validate([
-            'name' => 'string',
-            'price' => 'numeric',
-            'description' => 'nullable|string',
-        ]);
+        $validated = $request->validated();
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('products', 'public');
@@ -63,16 +62,11 @@ class ProductController extends Controller
         }
 
         $product->update($validated);
-        return $product;
+        return new ProductResource($product);
     }
 
-    public function destroy(Request $request, Product $product)
+    public function destroy(DestroyProductRequest $request, Product $product)
     {
-        $shop = $product->shop;
-        if ($shop->owner_id !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         $product->delete();
         return response()->json(['message' => 'Product deleted']);
     }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, StatusBar } from 'react-native';
-import { HeartPulse, ShoppingBag, Wrench, Search, AlertTriangle, Shield, Store, Settings, Droplet, AlertCircle, ChevronRight } from 'lucide-react-native';
+import { HeartPulse, ShoppingBag, Wrench, Search, AlertTriangle, Shield, Store, Settings, Droplet, AlertCircle, ChevronRight, Building } from 'lucide-react-native';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import HeaderMenu from '../components/HeaderMenu';
@@ -10,9 +10,9 @@ const HomeScreen = ({ navigation }) => {
   const { theme, isDark } = useTheme();
 
   const features = [
-    { name: 'Health', icon: <HeartPulse color={isDark ? '#fca5a5' : '#e63946'} size={30} />, screen: 'Health', color: isDark ? '#450a0a' : '#fff5f5' },
-    { name: 'Market', icon: <ShoppingBag color={isDark ? '#60a5fa' : '#007bff'} size={30} />, screen: 'Market', color: isDark ? '#172554' : '#f0f7ff' },
-    { name: 'Services', icon: <Wrench color={isDark ? '#fbbf24' : '#f4a261'} size={30} />, screen: 'Services', color: isDark ? '#451a03' : '#fffaf0' },
+    { name: 'Health', icon: <HeartPulse color={isDark ? '#fca5a5' : '#e63946'} size={30} />, screen: 'Health', initialScreen: 'HospitalList', color: isDark ? '#450a0a' : '#fff5f5' },
+    { name: 'Market', icon: <ShoppingBag color={isDark ? '#60a5fa' : '#007bff'} size={30} />, screen: 'Market', initialScreen: 'ShopList', color: isDark ? '#172554' : '#f0f7ff' },
+    { name: 'Services', icon: <Wrench color={isDark ? '#fbbf24' : '#f4a261'} size={30} />, screen: 'Services', initialScreen: 'ServiceList', color: isDark ? '#451a03' : '#fffaf0' },
   ];
 
   return (
@@ -30,7 +30,7 @@ const HomeScreen = ({ navigation }) => {
         </View>
         <Text style={styles.subtitle}>Bringing the city closer to you.</Text>
       </View>
-
+ 
       {/* Modern Search Bar */}
       <TouchableOpacity 
         style={[styles.searchBar, { backgroundColor: theme.card, shadowColor: isDark ? '#000' : '#d1d5db' }]} 
@@ -39,14 +39,14 @@ const HomeScreen = ({ navigation }) => {
         <Search color={theme.placeholder} size={20} />
         <Text style={[styles.searchText, { color: theme.placeholder }]}>Search services, help...</Text>
       </TouchableOpacity>
-
+ 
       {/* Main Feature Grid */}
       <View style={styles.grid}>
         {features.map((f, i) => (
           <TouchableOpacity 
             key={i} 
             style={[styles.card, { backgroundColor: f.color }]} 
-            onPress={() => navigation.navigate(f.screen)}
+            onPress={() => navigation.navigate(f.screen, { screen: f.initialScreen })}
           >
             <View style={[styles.iconCircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff' }]}>{f.icon}</View>
             <Text style={[styles.cardText, { color: isDark ? '#cbd5e1' : '#1e293b' }]}>{f.name}</Text>
@@ -78,6 +78,16 @@ const HomeScreen = ({ navigation }) => {
           <View style={[styles.iconCircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff' }]}><Shield color={isDark ? '#4ade80' : '#2e7d32'} size={30} /></View>
           <Text style={[styles.cardText, { color: isDark ? '#cbd5e1' : '#1e293b' }]}>Emergency Services</Text>
         </TouchableOpacity>
+
+        {user?.role === 'Hospital' && (
+          <TouchableOpacity 
+            style={[styles.card, { backgroundColor: isDark ? '#0c4a6e' : '#e0f2fe' }]} 
+            onPress={() => navigation.navigate('ManageHospital')}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff' }]}><Building color={isDark ? '#38bdf8' : '#0284c7'} size={30} /></View>
+            <Text style={[styles.cardText, { color: isDark ? '#cbd5e1' : '#1e293b' }]}>Manage Hospital</Text>
+          </TouchableOpacity>
+        )}
 
         {user?.role === 'ShopOwner' && (
           <TouchableOpacity 
@@ -141,14 +151,7 @@ const HomeScreen = ({ navigation }) => {
         <Text style={[styles.activityEmpty, { color: theme.secondaryText }]}>No recent activities found.</Text>
       </View>
 
-      {/* Test Crash Button (Remove before production) */}
-      <TouchableOpacity 
-        style={[styles.testCrashBtn, { backgroundColor: isDark ? '#1e1b4b' : '#f1f5f9' }]}
-        onPress={() => { throw new Error("This is a manual test crash to verify the Error Boundary!"); }}
-      >
-        <AlertTriangle color="#64748B" size={16} />
-        <Text style={{ color: '#64748B', fontSize: 12, marginLeft: 8 }}>Test Error Boundary</Text>
-      </TouchableOpacity>
+
 
       <View style={{ height: 40 }} />
     </ScrollView>
@@ -226,19 +229,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: 'bold' },
   seeAll: { fontSize: 12, fontWeight: 'bold' },
   activityCard: { marginHorizontal: 25, marginTop: 15, padding: 25, borderRadius: 20, alignItems: 'center' },
-  activityEmpty: { fontSize: 14 },
-  testCrashBtn: {
-    marginHorizontal: 100,
-    marginTop: 20,
-    padding: 10,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderStyle: 'dashed',
-  }
+  activityEmpty: { fontSize: 14 }
 });
 
 export default HomeScreen;

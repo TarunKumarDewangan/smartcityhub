@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
-import { Save } from 'lucide-react-native';
+import { Save, Calendar, Clock } from 'lucide-react-native';
 import apiClient from '../api/client';
 import PhoneInput from '../components/PhoneInput';
 import { useTheme } from '../context/ThemeContext';
@@ -17,6 +17,8 @@ const AddEditServiceScreen = ({ navigation, route }) => {
     contact_phone: editService?.contact_phone?.replace('+91', '') || '',
     description: editService?.description || '',
     is_available: editService?.is_available ?? true,
+    working_days: editService?.working_days || '',
+    working_hours: editService?.working_hours || '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -103,15 +105,39 @@ const AddEditServiceScreen = ({ navigation, route }) => {
                 <Text style={[styles.label, { color: theme.text, marginBottom: 0 }]}>Availability Status</Text>
                 <Text style={[styles.subLabel, { color: theme.primary }]}>Show this service to the public</Text>
             </View>
-            <Switch 
-                value={form.is_available} 
-                onValueChange={(v) => setForm({...form, is_available: v})} 
+            <Switch
+                value={form.is_available}
+                onValueChange={(v) => setForm({...form, is_available: v})}
                 trackColor={{ false: theme.border, true: theme.primary + '80' }}
                 thumbColor={form.is_available ? theme.primary : (isDark ? '#444' : '#f4f3f4')}
             />
         </View>
 
-        <TouchableOpacity 
+        <Text style={[styles.label, { color: theme.text }]}>Working Days</Text>
+        <View style={[styles.iconInputRow, { backgroundColor: theme.input, borderColor: theme.border }]}>
+          <Calendar size={18} color={theme.secondaryText} />
+          <TextInput
+            style={[styles.iconInput, { color: theme.text }]}
+            placeholder="e.g. Mon, Wed, Fri or Daily"
+            placeholderTextColor={theme.placeholder}
+            value={form.working_days}
+            onChangeText={(v) => setForm({...form, working_days: v})}
+          />
+        </View>
+
+        <Text style={[styles.label, { color: theme.text }]}>Working Hours</Text>
+        <View style={[styles.iconInputRow, { backgroundColor: theme.input, borderColor: theme.border, marginBottom: 20 }]}>
+          <Clock size={18} color={theme.secondaryText} />
+          <TextInput
+            style={[styles.iconInput, { color: theme.text }]}
+            placeholder="e.g. 09:00 AM - 06:00 PM"
+            placeholderTextColor={theme.placeholder}
+            value={form.working_hours}
+            onChangeText={(v) => setForm({...form, working_hours: v})}
+          />
+        </View>
+
+        <TouchableOpacity
           style={[styles.button, { backgroundColor: theme.primary }, loading && { opacity: 0.7 }]} 
           onPress={handleSubmit}
           disabled={loading}
@@ -136,6 +162,8 @@ const styles = StyleSheet.create({
   textArea: { height: 100, textAlignVertical: 'top' },
   switchRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 30, padding: 15, borderRadius: 12 },
   subLabel: { fontSize: 12 },
+  iconInputRow: { flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 12, marginBottom: 20, borderWidth: 1 },
+  iconInput: { flex: 1, marginLeft: 10, fontSize: 15 },
   button: { padding: 18, borderRadius: 12, alignItems: 'center', marginTop: 10, flexDirection: 'row', justifyContent: 'center' },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginLeft: 10 },
 });

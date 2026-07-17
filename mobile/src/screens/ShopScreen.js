@@ -15,22 +15,44 @@ const ShopScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const { theme, isDark } = useTheme();
 
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   useEffect(() => {
-    fetchShops();
+    fetchShops(1);
   }, []);
 
-  const fetchShops = async () => {
+  const fetchShops = async (pageNumber = 1) => {
+    if (pageNumber === 1) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
     try {
-      const response = await apiClient.get('/shops');
-      const data = response.data;
-      setShops(data);
-      setFilteredShops(data);
-      const uniqueCats = ['All', ...new Set(data.map(shop => shop.category))];
-      setCategories(uniqueCats);
+      const response = await apiClient.get(`/shops?paginate=true&page=${pageNumber}`);
+      const list = response.data.data;
+      if (pageNumber === 1) {
+        setShops(list);
+        setFilteredShops(list);
+        const uniqueCats = ['All', ...new Set(list.map(shop => shop.category))];
+        setCategories(uniqueCats);
+      } else {
+        setShops(prev => [...prev, ...list]);
+      }
+      setHasMore(response.data.current_page < response.data.last_page);
+      setPage(pageNumber);
     } catch (e) {
       console.error('ShopFetchError:', e.response?.data || e.message);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMore = () => {
+    if (!loading && !loadingMore && hasMore) {
+      fetchShops(page + 1);
     }
   };
 
@@ -179,6 +201,9 @@ const ShopScreen = ({ navigation }) => {
         renderItem={renderShop}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={loadingMore ? <ActivityIndicator size="small" color={theme.primary} style={{ marginVertical: 15 }} /> : null}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <ShoppingBag size={50} color={theme.border} />

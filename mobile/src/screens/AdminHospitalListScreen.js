@@ -19,7 +19,7 @@ const AdminHospitalListScreen = ({ navigation }) => {
     const fetchHospitals = async () => {
         try {
             const response = await apiClient.get('/hospitals');
-            setHospitals(response.data);
+            setHospitals(Array.isArray(response.data) ? response.data : (response.data?.data || []));
         } catch (e) {
             console.error(e);
             Alert.alert('Error', 'Failed to fetch hospitals');

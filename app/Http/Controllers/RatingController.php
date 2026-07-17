@@ -7,18 +7,12 @@ use App\Models\Shop;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\StoreRatingRequest;
 
 class RatingController extends Controller
 {
-    public function store(Request $request)
+    public function store(StoreRatingRequest $request)
     {
-        $request->validate([
-            'ratable_id' => 'required',
-            'ratable_type' => 'required|in:shop,product',
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string',
-        ]);
-
         $modelType = $request->ratable_type === 'shop' ? Shop::class : Product::class;
         $model = $modelType::findOrFail($request->ratable_id);
 

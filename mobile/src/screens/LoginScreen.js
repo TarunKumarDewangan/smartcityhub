@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import InputField from '../components/InputField';
+import { Mail, Lock } from 'lucide-react-native';
 
 const LoginScreen = ({ navigation }) => {
   const [identifier, setIdentifier] = useState(''); // Email or Phone
@@ -33,20 +35,19 @@ const LoginScreen = ({ navigation }) => {
         <Text style={[styles.title, { color: theme.primary }]}>Smart City</Text>
         <Text style={[styles.subtitle, { color: theme.secondaryText }]}>Login to your account</Text>
 
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
+        <InputField
+          label="Email or Phone Number"
+          icon={Mail}
           placeholder="Email or Phone Number"
-          placeholderTextColor={theme.placeholder}
           value={identifier}
           onChangeText={setIdentifier}
           keyboardType="email-address"
-          autoCapitalize="none"
         />
 
-        <TextInput
-          style={[styles.input, { backgroundColor: theme.card, borderColor: theme.border, color: theme.text }]}
+        <InputField
+          label="Password"
+          icon={Lock}
           placeholder="Password"
-          placeholderTextColor={theme.placeholder}
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -68,7 +69,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: 'center' },
   title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center' },
   subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 30 },
-  input: { padding: 15, borderRadius: 10, marginBottom: 15, borderWidth: 1 },
   button: { padding: 15, borderRadius: 10, alignItems: 'center' },
   buttonText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   link: { marginTop: 20, textAlign: 'center' }

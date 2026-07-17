@@ -18,6 +18,7 @@ class User extends Authenticatable
         'password',
         'role',
         'is_approved',
+        'phone_verified_at',
     ];
 
     protected $hidden = [
@@ -27,7 +28,13 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'phone_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_approved' => 'boolean',
     ];
+
+    public function favoriteHospitals()
+    {
+        return $this->belongsToMany(Hospital::class, 'favorite_hospitals');
+    }
 }

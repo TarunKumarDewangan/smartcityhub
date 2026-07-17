@@ -25,8 +25,10 @@ use App\Http\Controllers\DoctorController;
 */
 
 // Public Auth Routes
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('throttle:auth')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+});
 
 // Public Data Routes (Read-only)
 Route::get('/hospitals', [HospitalController::class, 'index']);
@@ -58,12 +60,14 @@ Route::get('/search', [GlobalSearchController::class, 'search']);
 // Protected Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/logout-all', [AuthController::class, 'logoutAll']);
     Route::get('/user', [AuthController::class, 'me']);
 
     // Hospital Management (POST/PUT/DELETE if needed)
     Route::post('/hospitals', [HospitalController::class, 'store']);
     Route::put('/hospitals/{hospital}', [HospitalController::class, 'update']);
     Route::delete('/hospitals/{hospital}', [HospitalController::class, 'destroy']);
+    Route::post('/hospitals/{hospital}/favorite', [HospitalController::class, 'toggleFavorite']);
 
     // Ambulance Management
     Route::post('/ambulances', [AmbulanceController::class, 'store']);
@@ -98,16 +102,34 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/ratings', [RatingController::class, 'store']);
 
     // Admin Routes
-    Route::prefix('admin')->group(function () {
+    Route::prefix('admin')->middleware('role:Admin')->group(function () {
         Route::get('/stats', [AdminController::class, 'stats']);
         Route::get('/pending-users', [AdminController::class, 'pendingUsers']);
         Route::post('/approve-user/{id}', [AdminController::class, 'approveUser']);
+        Route::get('/users', [AdminController::class, 'allUsers']);
+        Route::post('/users', [AdminController::class, 'createUser']);
+        Route::put('/users/{id}', [AdminController::class, 'updateUser']);
+        Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
         Route::get('/pending-shops', [AdminController::class, 'pendingShops']);
         Route::post('/approve-shop/{id}', [AdminController::class, 'approveShop']);
         Route::get('/pending-services', [AdminController::class, 'pendingServices']);
         Route::post('/approve-service/{id}', [AdminController::class, 'approveService']);
         Route::post('/create-blood-bank', [AdminController::class, 'createBloodBankProvider']);
         Route::post('/create-hospital', [AdminController::class, 'createHospitalProvider']);
+        // City Issues Management
+        Route::get('/city-issues', [AdminController::class, 'allCityIssues']);
+        Route::put('/city-issues/{id}/status', [AdminController::class, 'updateIssueStatus']);
+        Route::delete('/city-issues/{id}', [AdminController::class, 'deleteIssue']);
+    });
+
+    // Helpline Admin CRUD
+    Route::middleware('role:Admin')->group(function () {
+        Route::post('/helplines', [HelplineController::class, 'store']);
+        Route::put('/helplines/{id}', [HelplineController::class, 'update']);
+        Route::delete('/helplines/{id}', [HelplineController::class, 'destroy']);
+
+        // Blood Bank Admin Delete
+        Route::delete('/blood-banks/{id}', [BloodBankController::class, 'destroy']);
     });
 
     // Blood Bank Management for Providers

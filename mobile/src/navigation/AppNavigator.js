@@ -40,16 +40,150 @@ import ManageDoctorsScreen from '../screens/ManageDoctorsScreen';
 import AddEditDoctorScreen from '../screens/AddEditDoctorScreen';
 import AdminHospitalListScreen from '../screens/AdminHospitalListScreen';
 import EditHospitalScreen from '../screens/EditHospitalScreen';
+import EditHospitalProfileScreen from '../screens/EditHospitalProfileScreen';
 import AddHospitalScreen from '../screens/AddHospitalScreen';
+import AdminManageHelplinesScreen from '../screens/AdminManageHelplinesScreen';
+import AdminBloodBankListScreen from '../screens/AdminBloodBankListScreen';
+import AdminCityIssuesScreen from '../screens/AdminCityIssuesScreen';
+import HospitalDetailScreen from '../screens/HospitalDetailScreen';
+import ServiceDetailScreen from '../screens/ServiceDetailScreen';
+import ManageAllUsersScreen from '../screens/ManageAllUsersScreen';
+import AddEditUserScreen from '../screens/AddEditUserScreen';
+
+import { useTheme } from '../context/ThemeContext';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+const HomeStack = createStackNavigator();
+const HealthStack = createStackNavigator();
+const MarketStack = createStackNavigator();
+const ServicesStack = createStackNavigator();
+
+const renderSharedScreens = (StackInstance) => [
+  <StackInstance.Screen key="Login" name="Login" component={LoginScreen} options={{ headerShown: true, title: 'Login' }} />,
+  <StackInstance.Screen key="Register" name="Register" component={RegisterScreen} options={{ headerShown: true, title: 'Join Smart City' }} />,
+  <StackInstance.Screen key="Ambulance" name="Ambulance" component={AmbulanceScreen} options={{ headerShown: true, title: 'Ambulances' }} />,
+  <StackInstance.Screen key="ReportIssue" name="ReportIssue" component={ReportIssueScreen} options={{ headerShown: true, title: 'Report Issue' }} />,
+  <StackInstance.Screen key="Search" name="Search" component={SearchScreen} options={{ headerShown: true, title: 'Global Search' }} />,
+  <StackInstance.Screen key="ManageShops" name="ManageShops" component={ManageShopsScreen} options={{ headerShown: true, title: 'Manage Shops' }} />,
+  <StackInstance.Screen key="AddShop" name="AddShop" component={AddShopScreen} options={{ headerShown: true, title: 'Add New Shop' }} />,
+  <StackInstance.Screen key="AddProduct" name="AddProduct" component={AddProductScreen} options={{ headerShown: true, title: 'Manage Products' }} />,
+  <StackInstance.Screen key="EditShop" name="EditShop" component={EditShopScreen} options={{ headerShown: true, title: 'Edit Shop' }} />,
+  <StackInstance.Screen key="EditProduct" name="EditProduct" component={EditProductScreen} options={{ headerShown: true, title: 'Edit Product' }} />,
+  <StackInstance.Screen key="ManageAmbulances" name="ManageAmbulances" component={ManageAmbulanceScreen} options={{ headerShown: true, title: 'Manage Ambulances' }} />,
+  <StackInstance.Screen key="AddEditAmbulance" name="AddEditAmbulance" component={AddEditAmbulanceScreen} options={{ headerShown: true, title: 'Ambulance Details' }} />,
+  <StackInstance.Screen key="ShopDetail" name="ShopDetail" component={ShopDetailScreen} options={{ headerShown: false }} />,
+  <StackInstance.Screen key="EmergencyServices" name="EmergencyServices" component={EmergencyHub} options={{ headerShown: true, title: 'Emergency Services' }} />,
+  <StackInstance.Screen key="ProductDetail" name="ProductDetail" component={ProductDetailScreen} options={{ headerShown: false }} />,
+  <StackInstance.Screen key="ManageServices" name="ManageServices" component={ManageServicesScreen} options={{ headerShown: true, title: 'Service Management' }} />,
+  <StackInstance.Screen key="AddEditService" name="AddEditService" component={AddEditServiceScreen} options={{ headerShown: true, title: 'Service Details' }} />,
+  <StackInstance.Screen key="AdminHome" name="AdminHome" component={AdminHomeScreen} options={{ headerShown: true, title: 'Admin Panel' }} />,
+  <StackInstance.Screen key="UserApproval" name="UserApproval" component={UserApprovalScreen} options={{ headerShown: true, title: 'User Approvals' }} />,
+  <StackInstance.Screen key="ResourceApproval" name="ResourceApproval" component={ResourceApprovalScreen} options={{ headerShown: true, title: 'Approvals' }} />,
+  <StackInstance.Screen key="ManageBloodBank" name="ManageBloodBank" component={ManageBloodBankScreen} options={{ headerShown: true, title: 'Manage Blood Bank' }} />,
+  <StackInstance.Screen key="AddBloodBank" name="AddBloodBank" component={AddBloodBankScreen} options={{ headerShown: true, title: 'Add Blood Bank' }} />,
+  <StackInstance.Screen key="ManageHospital" name="ManageHospital" component={ManageHospitalScreen} options={{ headerShown: true, title: 'Manage Hospital' }} />,
+  <StackInstance.Screen key="ManageDoctors" name="ManageDoctors" component={ManageDoctorsScreen} options={{ headerShown: true, title: 'Manage Doctors' }} />,
+  <StackInstance.Screen key="AddEditDoctor" name="AddEditDoctor" component={AddEditDoctorScreen} options={{ headerShown: true, title: 'Doctor Details' }} />,
+  <StackInstance.Screen key="AdminHospitalList" name="AdminHospitalList" component={AdminHospitalListScreen} options={{ headerShown: true, title: 'Manage Hospitals' }} />,
+  <StackInstance.Screen key="EditHospital" name="EditHospital" component={EditHospitalScreen} options={{ headerShown: true, title: 'Edit Hospital' }} />,
+  <StackInstance.Screen key="EditHospitalProfile" name="EditHospitalProfile" component={EditHospitalProfileScreen} options={{ headerShown: true, title: 'Edit Hospital Profile' }} />,
+  <StackInstance.Screen key="AddHospital" name="AddHospital" component={AddHospitalScreen} options={{ headerShown: true, title: 'Add Hospital Specialist' }} />,
+  <StackInstance.Screen key="AdminManageHelplines" name="AdminManageHelplines" component={AdminManageHelplinesScreen} options={{ headerShown: true, title: 'Manage Helplines' }} />,
+  <StackInstance.Screen key="AdminBloodBankList" name="AdminBloodBankList" component={AdminBloodBankListScreen} options={{ headerShown: true, title: 'Blood Banks' }} />,
+  <StackInstance.Screen key="AdminCityIssues" name="AdminCityIssues" component={AdminCityIssuesScreen} options={{ headerShown: true, title: 'City Issues' }} />,
+  <StackInstance.Screen key="HospitalDetail" name="HospitalDetail" component={HospitalDetailScreen} options={{ headerShown: false }} />,
+  <StackInstance.Screen key="ServiceDetail" name="ServiceDetail" component={ServiceDetailScreen} options={{ headerShown: false }} />,
+  <StackInstance.Screen key="ManageAllUsers" name="ManageAllUsers" component={ManageAllUsersScreen} options={{ headerShown: true, title: 'Manage Users' }} />,
+  <StackInstance.Screen key="AddEditUser" name="AddEditUser" component={AddEditUserScreen} options={{ headerShown: true, title: 'User Details' }} />,
+];
+
+const HomeStackScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <HomeStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        headerRight: () => <HeaderMenu />,
+        headerStyle: { backgroundColor: theme.card },
+        headerTintColor: theme.text,
+      }}
+    >
+      <HomeStack.Screen name="HomeScreen" component={HomeScreen} />
+      {renderSharedScreens(HomeStack)}
+    </HomeStack.Navigator>
+  );
+};
+
+const HealthStackScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <HealthStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        headerRight: () => <HeaderMenu />,
+        headerStyle: { backgroundColor: theme.card },
+        headerTintColor: theme.text,
+      }}
+    >
+      <HealthStack.Screen 
+        name="HospitalList" 
+        component={HospitalScreen} 
+        options={{ headerShown: true, title: 'Health' }} 
+      />
+      {renderSharedScreens(HealthStack)}
+    </HealthStack.Navigator>
+  );
+};
+
+const MarketStackScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <MarketStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        headerRight: () => <HeaderMenu />,
+        headerStyle: { backgroundColor: theme.card },
+        headerTintColor: theme.text,
+      }}
+    >
+      <MarketStack.Screen 
+        name="ShopList" 
+        component={ShopScreen} 
+        options={{ headerShown: true, title: 'Market' }} 
+      />
+      {renderSharedScreens(MarketStack)}
+    </MarketStack.Navigator>
+  );
+};
+
+const ServicesStackScreen = () => {
+  const { theme } = useTheme();
+  return (
+    <ServicesStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        headerRight: () => <HeaderMenu />,
+        headerStyle: { backgroundColor: theme.card },
+        headerTintColor: theme.text,
+      }}
+    >
+      <ServicesStack.Screen 
+        name="ServiceList" 
+        component={ServiceScreen} 
+        options={{ headerShown: true, title: 'Services' }} 
+      />
+      {renderSharedScreens(ServicesStack)}
+    </ServicesStack.Navigator>
+  );
+};
+
 const MainTabNavigator = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
-      headerShown: true,
-      headerRight: () => <HeaderMenu />,
+      headerShown: false,
+      unmountOnBlur: true,
       tabBarIcon: ({ color, size }) => {
         if (route.name === 'Home') return <Home color={color} size={size} />;
         if (route.name === 'Health') return <HeartPulse color={color} size={size} />;
@@ -59,14 +193,36 @@ const MainTabNavigator = () => (
       },
     })}
   >
-    <Tab.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-    <Tab.Screen name="Health" component={HospitalScreen} />
-    <Tab.Screen name="Market" component={ShopScreen} />
-    <Tab.Screen name="Services" component={ServiceScreen} />
+    <Tab.Screen name="Home" component={HomeStackScreen} />
+    <Tab.Screen 
+      name="Health" 
+      component={HealthStackScreen} 
+      listeners={({ navigation }) => ({
+        tabPress: (e) => {
+          navigation.navigate('Health', { screen: 'HospitalList' });
+        },
+      })}
+    />
+    <Tab.Screen 
+      name="Market" 
+      component={MarketStackScreen} 
+      listeners={({ navigation }) => ({
+        tabPress: (e) => {
+          navigation.navigate('Market', { screen: 'ShopList' });
+        },
+      })}
+    />
+    <Tab.Screen 
+      name="Services" 
+      component={ServicesStackScreen} 
+      listeners={({ navigation }) => ({
+        tabPress: (e) => {
+          navigation.navigate('Services', { screen: 'ServiceList' });
+        },
+      })}
+    />
   </Tab.Navigator>
 );
-
-import { useTheme } from '../context/ThemeContext';
 
 const AppNavigator = () => {
   const { loading } = useAuth();
@@ -135,7 +291,15 @@ const AppNavigator = () => {
         <Stack.Screen name="AddEditDoctor" component={AddEditDoctorScreen} options={{ headerShown: true, title: 'Doctor Details' }} />
         <Stack.Screen name="AdminHospitalList" component={AdminHospitalListScreen} options={{ headerShown: true, title: 'Manage Hospitals' }} />
         <Stack.Screen name="EditHospital" component={EditHospitalScreen} options={{ headerShown: true, title: 'Edit Hospital' }} />
+        <Stack.Screen name="EditHospitalProfile" component={EditHospitalProfileScreen} options={{ headerShown: true, title: 'Edit Hospital Profile' }} />
         <Stack.Screen name="AddHospital" component={AddHospitalScreen} options={{ headerShown: true, title: 'Add Hospital Specialist' }} />
+        <Stack.Screen name="AdminManageHelplines" component={AdminManageHelplinesScreen} options={{ headerShown: true, title: 'Manage Helplines' }} />
+        <Stack.Screen name="AdminBloodBankList" component={AdminBloodBankListScreen} options={{ headerShown: true, title: 'Blood Banks' }} />
+        <Stack.Screen name="AdminCityIssues" component={AdminCityIssuesScreen} options={{ headerShown: true, title: 'City Issues' }} />
+        <Stack.Screen name="HospitalDetail" component={HospitalDetailScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="ManageAllUsers" component={ManageAllUsersScreen} options={{ headerShown: true, title: 'Manage Users' }} />
+        <Stack.Screen name="AddEditUser" component={AddEditUserScreen} options={{ headerShown: true, title: 'User Details' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -17,7 +17,7 @@ const ManageAmbulanceScreen = ({ navigation }) => {
   const fetchAmbulances = async () => {
     try {
       const response = await apiClient.get('/ambulances');
-      setAmbulances(response.data);
+      setAmbulances(Array.isArray(response.data) ? response.data : (response.data?.data || []));
     } catch (e) {
       console.error(e);
       Alert.alert('Error', 'Failed to fetch ambulances');

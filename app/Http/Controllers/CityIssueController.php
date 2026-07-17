@@ -4,55 +4,47 @@ namespace App\Http\Controllers;
 
 use App\Models\CityIssue;
 use Illuminate\Http\Request;
+use App\Http\Requests\StoreCityIssueRequest;
+use App\Http\Requests\UpdateCityIssueRequest;
+use App\Http\Resources\CityIssueResource;
 
 class CityIssueController extends Controller
 {
     public function index(Request $request)
     {
-        return CityIssue::where('user_id', $request->user()->id)->get();
+        if ($request->user()->role === 'Admin') {
+            return CityIssueResource::collection(CityIssue::with('user')->latest()->get());
+        }
+        return CityIssueResource::collection(CityIssue::where('user_id', $request->user()->id)->latest()->get());
     }
 
-    public function store(Request $request)
+    public function store(StoreCityIssueRequest $request)
     {
-        $validated = $request->validate([
-            'type' => 'required|string',
-            'description' => 'required|string',
-        ]);
-
+        $validated = $request->validated();
         $validated['user_id'] = $request->user()->id;
         $validated['status'] = 'Open';
 
-        return CityIssue::create($validated);
+        $cityIssue = CityIssue::create($validated);
+        return new CityIssueResource($cityIssue);
     }
 
     public function show(CityIssue $cityIssue)
     {
-        // Ensure user can only see their own issues
-        if ($cityIssue->user_id !== auth()->id()) {
+        if (auth()->user()->role !== 'Admin' && $cityIssue->user_id !== auth()->id()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        return $cityIssue;
+        return new CityIssueResource($cityIssue->load('user'));
     }
 
-    public function update(Request $request, CityIssue $cityIssue)
+    public function update(UpdateCityIssueRequest $request, CityIssue $cityIssue)
     {
-        if ($cityIssue->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
-        $validated = $request->validate([
-            'type' => 'string',
-            'description' => 'string',
-            'status' => 'string|in:Open,In Progress,Resolved,Closed',
-        ]);
-
-        $cityIssue->update($validated);
-        return $cityIssue;
+        $cityIssue->update($request->validated());
+        return new CityIssueResource($cityIssue);
     }
 
     public function destroy(Request $request, CityIssue $cityIssue)
     {
-        if ($cityIssue->user_id !== $request->user()->id) {
+        if ($request->user()->role !== 'Admin' && $cityIssue->user_id !== $request->user()->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

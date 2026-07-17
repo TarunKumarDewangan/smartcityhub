@@ -23,8 +23,8 @@ const EmergencyHub = ({ navigation }) => {
         apiClient.get('/helplines'),
         apiClient.get('/blood-banks')
       ]);
-      setHelplines(hRes.data);
-      setBloodBanks(bRes.data);
+      setHelplines(Array.isArray(hRes.data) ? hRes.data : (hRes.data?.data || []));
+      setBloodBanks(Array.isArray(bRes.data) ? bRes.data : (bRes.data?.data || []));
     } catch (e) {
       console.error(e);
     } finally {
@@ -130,9 +130,13 @@ const EmergencyHub = ({ navigation }) => {
         {/* Dynamic Content Area */}
         <View style={styles.contentArea}>
           {activeTab === 'Helplines' ? (
-            helplines.map((item) => renderHelpline({ item }))
+            Array.isArray(helplines) && helplines.length > 0
+              ? helplines.map((item) => renderHelpline({ item }))
+              : <Text style={{ color: theme.secondaryText, textAlign: 'center', marginTop: 20 }}>No helplines found.</Text>
           ) : (
-            bloodBanks.map((item) => renderBloodBank({ item }))
+            Array.isArray(bloodBanks) && bloodBanks.length > 0
+              ? bloodBanks.map((item) => renderBloodBank({ item }))
+              : <Text style={{ color: theme.secondaryText, textAlign: 'center', marginTop: 20 }}>No blood banks found.</Text>
           )}
         </View>
       </ScrollView>

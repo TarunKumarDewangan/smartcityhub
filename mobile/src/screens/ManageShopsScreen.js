@@ -18,7 +18,7 @@ const ManageShopsScreen = ({ navigation }) => {
   const fetchMyShops = async () => {
     try {
       const response = await apiClient.get('/my-shops');
-      setShops(response.data);
+      setShops(Array.isArray(response.data) ? response.data : (response.data?.data || []));
     } catch (e) {
       console.error(e);
       Alert.alert('Error', 'Failed to fetch your shops.');

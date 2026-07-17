@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { Camera, MapPin } from 'lucide-react-native';
+import { Camera, MapPin, Calendar, Clock } from 'lucide-react-native';
 import apiClient from '../api/client';
 import PhoneInput from '../components/PhoneInput';
 import { useTheme } from '../context/ThemeContext';
@@ -15,7 +15,9 @@ const AddShopScreen = ({ navigation }) => {
     address: '',
     contact_phone: '',
     latitude: '',
-    longitude: ''
+    longitude: '',
+    opening_days: '',
+    opening_hours: ''
   });
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -73,6 +75,8 @@ const AddShopScreen = ({ navigation }) => {
     formData.append('contact_phone', '+91' + form.contact_phone);
     if (form.latitude) formData.append('latitude', form.latitude);
     if (form.longitude) formData.append('longitude', form.longitude);
+    if (form.opening_days) formData.append('opening_days', form.opening_days);
+    if (form.opening_hours) formData.append('opening_hours', form.opening_hours);
 
     if (image) {
       const uriParts = image.split('.');
@@ -164,6 +168,30 @@ const AddShopScreen = ({ navigation }) => {
           <Text style={[styles.locationButtonText, { color: theme.primary }]}>Capture Current Location</Text>
         </TouchableOpacity>
 
+        <Text style={[styles.label, { color: theme.text }]}>Opening Days</Text>
+        <View style={[styles.iconInputRow, { backgroundColor: theme.input, borderColor: theme.border }]}>
+          <Calendar size={18} color={theme.iconDefault} />
+          <TextInput
+            style={[styles.iconInput, { color: theme.text }]}
+            placeholder="e.g. Mon - Sat or Daily"
+            placeholderTextColor={theme.placeholder}
+            value={form.opening_days}
+            onChangeText={(v) => setForm({...form, opening_days: v})}
+          />
+        </View>
+
+        <Text style={[styles.label, { color: theme.text }]}>Opening Hours</Text>
+        <View style={[styles.iconInputRow, { backgroundColor: theme.input, borderColor: theme.border }]}>
+          <Clock size={18} color={theme.iconDefault} />
+          <TextInput
+            style={[styles.iconInput, { color: theme.text }]}
+            placeholder="e.g. 10:00 AM - 08:00 PM"
+            placeholderTextColor={theme.placeholder}
+            value={form.opening_hours}
+            onChangeText={(v) => setForm({...form, opening_hours: v})}
+          />
+        </View>
+
         <View style={styles.row}>
           <View style={{ flex: 1, marginRight: 10 }}>
             <Text style={[styles.subLabel, { color: theme.secondaryText }]}>Latitude</Text>
@@ -215,6 +243,8 @@ const styles = StyleSheet.create({
   placeholderText: { marginTop: 5 },
   locationButton: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 15, justifyContent: 'center' },
   locationButtonText: { fontWeight: 'bold', marginLeft: 10 },
+  iconInputRow: { flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 10, marginBottom: 20, borderWidth: 1 },
+  iconInput: { flex: 1, marginLeft: 10, fontSize: 15 },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   subLabel: { fontSize: 12, marginBottom: 5 }
 });

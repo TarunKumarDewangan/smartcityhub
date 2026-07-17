@@ -1,130 +1,228 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, StatusBar, Linking } from 'react-native';
-import { MapPin, Phone, Building, Users, ChevronRight, Stethoscope, Calendar, Clock } from 'lucide-react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+    View, Text, StyleSheet, FlatList, TouchableOpacity,
+    ActivityIndicator, StatusBar, TextInput, Alert
+} from 'react-native';
+import { Building, ChevronRight, MapPin, Search, X, Siren, Star } from 'lucide-react-native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import apiClient from '../api/client';
-import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const HospitalScreen = () => {
-    const { user } = useAuth();
     const navigation = useNavigation();
+    const { user } = useAuth();
     const [hospitals, setHospitals] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
     const { theme, isDark } = useTheme();
 
-    useEffect(() => {
-        fetchHospitals();
-    }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchHospitals(1);
+        }, [])
+    );
 
-    const fetchHospitals = async () => {
+    const toggleFavorite = async (hospital) => {
+        if (!user) {
+            Alert.alert('Join Us', 'Log in to add hospitals to your favorites!', [
+                { text: 'Not Now', style: 'cancel' },
+                { text: 'Login', onPress: () => navigation.navigate('Login') }
+            ]);
+            return;
+        }
+
         try {
-            const response = await apiClient.get('/hospitals');
-            setHospitals(response.data);
+            await apiClient.post(`/hospitals/${hospital.id}/favorite`);
+            fetchHospitals(1);
+        } catch (e) {
+            console.error(e);
+            Alert.alert('Error', 'Failed to update favorite status');
+        }
+    };
+
+    const fetchHospitals = async (pageNumber = 1) => {
+        if (pageNumber === 1) setLoading(true);
+        else setLoadingMore(true);
+        try {
+            const response = await apiClient.get(`/hospitals?paginate=true&page=${pageNumber}`);
+            const isPaginated = response.data && typeof response.data === 'object' && 'data' in response.data;
+            const list = isPaginated ? response.data.data : response.data;
+            if (pageNumber === 1) setHospitals(list || []);
+            else setHospitals(prev => [...prev, ...(list || [])]);
+            if (isPaginated) setHasMore(response.data.current_page < response.data.last_page);
+            else setHasMore(false);
+            setPage(pageNumber);
         } catch (e) {
             console.error(e);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
-    const renderDoctor = (doc, theme) => (
-        <View key={doc.id} style={styles.doctorMiniCard}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={[styles.docName, { color: theme.text }]}>{doc.name}</Text>
-                <View style={[styles.statusDot, { backgroundColor: doc.is_available ? '#22c55e' : '#ef4444' }]} />
-            </View>
-            <Text style={[styles.docSpecialty, { color: theme.primary }]}>{doc.specialty}</Text>
-            {doc.visiting_days && (
-                <View style={styles.docInfoRow}>
-                    <Calendar size={12} color={theme.placeholder} />
-                    <Text style={[styles.docInfoText, { color: theme.secondaryText }]}>{doc.visiting_days}</Text>
-                </View>
-            )}
-        </View>
-    );
+    // Live filter — runs instantly on every keystroke
+    const filtered = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return hospitals;
+        return hospitals.filter(h =>
+            h.name?.toLowerCase().includes(q) ||
+            h.address?.toLowerCase().includes(q) ||
+            (h.has_emergency && h.emergency_services?.toLowerCase().includes(q))
+        );
+    }, [searchQuery, hospitals]);
 
-    const renderItem = ({ item }) => (
-        <View style={[styles.card, { backgroundColor: theme.card, shadowColor: isDark ? '#000' : '#000' }]}>
-            <View style={styles.cardHeader}>
-                <View style={[styles.iconBox, { backgroundColor: theme.primary + '15' }]}>
-                    <Building size={24} color={theme.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                    <Text style={[styles.name, { color: theme.text }]}>{item.name}</Text>
-                    <View style={styles.infoRow}>
-                        <MapPin size={14} color={theme.placeholder} />
-                        <Text style={[styles.infoText, { color: theme.secondaryText }]} numberOfLines={1}>{item.address}</Text>
-                    </View>
-                </View>
-                <Text style={[styles.rating, { color: isDark ? '#fbbf24' : '#f59e0b' }]}>⭐ {item.rating}</Text>
-            </View>
+    const renderItem = ({ item }) => {
+        const crowdColor =
+            item.crowd_status === 'High' ? '#ef4444' :
+            item.crowd_status === 'Medium' ? '#f59e0b' : '#22c55e';
+        const crowdBg =
+            item.crowd_status === 'High' ? '#ef444415' :
+            item.crowd_status === 'Medium' ? '#f59e0b15' : '#22c55e15';
+        const crowdLabel =
+            item.crowd_status === 'High' ? 'High (10+)' :
+            item.crowd_status === 'Medium' ? 'Mid (5-10)' : 'Low (1-5)';
 
-            <View style={styles.badgeRow}>
-                <View style={[
-                  styles.badge, 
-                  item.crowd_status === 'High' 
-                    ? { backgroundColor: '#ef444420' } 
-                    : item.crowd_status === 'Medium' ? { backgroundColor: '#f59e0b20' } : { backgroundColor: '#22c55e20' }
-                ]}>
-                  <View style={[styles.dot, { backgroundColor: item.crowd_status === 'High' ? '#ef4444' : item.crowd_status === 'Medium' ? '#f59e0b' : '#22c55e' }]} />
-                  <Text style={[
-                    styles.badgeText, 
-                    { color: item.crowd_status === 'High' ? '#ef4444' : item.crowd_status === 'Medium' ? '#f59e0b' : '#22c55e' }
-                  ]}>Crowd: {item.crowd_status}</Text>
-                </View>
-
-                <TouchableOpacity 
-                    style={[styles.callBtn, { backgroundColor: theme.primary }]}
-                    onPress={() => item.contact && Linking.openURL(`tel:${item.contact}`)}
-                >
-                    <Phone size={14} color="#fff" />
-                    <Text style={styles.callBtnText}>Call</Text>
-                </TouchableOpacity>
-            </View>
-
-            {item.doctors && item.doctors.length > 0 && (
-                <View style={[styles.doctorsSection, { borderTopColor: theme.divider }]}>
-                    <View style={styles.sectionHeader}>
-                        <Stethoscope size={16} color={theme.secondaryText} />
-                        <Text style={[styles.sectionTitle, { color: theme.text }]}>Available Doctors</Text>
-                    </View>
-                    <View style={styles.doctorsGrid}>
-                        {item.doctors.slice(0, 3).map(doc => renderDoctor(doc, theme))}
-                        {item.doctors.length > 3 && (
-                            <TouchableOpacity style={styles.moreBtn}>
-                                <Text style={[styles.moreText, { color: theme.primary }]}>+{item.doctors.length - 3} more specialists</Text>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-                </View>
-            )}
-        </View>
-    );
-
-    if (loading) {
         return (
-            <View style={[styles.center, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color={theme.primary} />
+            <View style={[styles.card, { backgroundColor: theme.card, shadowColor: isDark ? '#000' : '#aaa' }]}>
+                {/* Name + Address */}
+                <View style={styles.cardHeader}>
+                    <View style={[styles.iconBox, { backgroundColor: theme.primary + '15' }]}>
+                        <Building size={22} color={theme.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[styles.name, { color: theme.text }]}>{item.name}</Text>
+                        <Text style={[styles.idText, { color: theme.placeholder }]}>Hospital #{item.id}</Text>
+                        {item.address ? (
+                            <View style={styles.addressRow}>
+                                <MapPin size={11} color={theme.placeholder} />
+                                <Text
+                                    style={[styles.addressText, { color: theme.secondaryText }]}
+                                    numberOfLines={1}
+                                >
+                                    {item.address}
+                                </Text>
+                            </View>
+                        ) : null}
+                    </View>
+                    <TouchableOpacity 
+                        style={{ padding: 8, marginTop: -4, marginRight: -4 }} 
+                        onPress={() => toggleFavorite(item)}
+                    >
+                        <Star 
+                            size={20} 
+                            color={item.is_favorite ? '#eab308' : theme.placeholder} 
+                            fill={item.is_favorite ? '#eab308' : 'none'} 
+                        />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Badges Row (Crowd + Emergency) */}
+                <View style={styles.badgeRow}>
+                    <View style={[styles.crowdBadge, { backgroundColor: crowdBg, borderColor: crowdColor }]}>
+                        <View style={[styles.crowdDot, { backgroundColor: crowdColor }]} />
+                        <Text style={[styles.crowdText, { color: crowdColor }]}>
+                            Crowd: {crowdLabel}
+                        </Text>
+                    </View>
+
+                    {!!item.has_emergency && (
+                        <View style={[styles.emergencyBadge, { backgroundColor: '#ef444410', borderColor: '#ef4444' }]}>
+                            <Siren size={12} color="#ef4444" style={{ marginRight: 5 }} />
+                            <Text style={[styles.emergencyText, { color: '#ef4444' }]}>
+                                Emergency ({item.bed_count ?? 0} Beds)
+                            </Text>
+                        </View>
+                    )}
+                </View>
+
+                {/* Footer Row */}
+                <View style={[styles.cardFooter, { borderTopColor: theme.divider }]}>
+                    <TouchableOpacity
+                        style={styles.seeMoreLink}
+                        onPress={() => navigation.navigate('HospitalDetail', { hospital: item })}
+                    >
+                        <Text style={[styles.seeMoreLinkText, { color: theme.primary }]}>See Details</Text>
+                        <ChevronRight size={14} color={theme.primary} style={{ marginLeft: 2 }} />
+                    </TouchableOpacity>
+
+                    {item.rating != null && (
+                        <Text style={[styles.ratingText, { color: isDark ? '#fbbf24' : '#f59e0b' }]}>
+                            ⭐ {parseFloat(item.rating).toFixed(1)}
+                        </Text>
+                    )}
+                </View>
             </View>
         );
-    }
+    };
 
     return (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+
+            {/* Header */}
             <View style={styles.headerArea}>
                 <Text style={[styles.title, { color: theme.text }]}>Nearby Hospitals</Text>
-                <Text style={[styles.subtitle, { color: theme.secondaryText }]}>Find care and check live crowd status</Text>
+                <Text style={[styles.subtitle, { color: theme.secondaryText }]}>
+                    Find care and check live crowd status
+                </Text>
             </View>
-            <FlatList
-                data={hospitals}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={renderItem}
-                contentContainerStyle={styles.list}
-                ListEmptyComponent={<Text style={[styles.empty, { color: theme.secondaryText }]}>No hospitals found.</Text>}
-                showsVerticalScrollIndicator={false}
-            />
+
+            {/* Live Search Bar */}
+            <View style={[styles.searchBar, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                <Search size={18} color={theme.placeholder} />
+                <TextInput
+                    style={[styles.searchInput, { color: theme.text }]}
+                    placeholder="Search hospital or address…"
+                    placeholderTextColor={theme.placeholder}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    autoCorrect={false}
+                    clearButtonMode="never"
+                />
+                {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <X size={16} color={theme.placeholder} />
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            {loading ? (
+                <View style={styles.center}>
+                    <ActivityIndicator size="large" color={theme.primary} />
+                </View>
+            ) : (
+                <FlatList
+                    data={filtered}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.list}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                    ListEmptyComponent={
+                        <View style={styles.emptyBox}>
+                            <Search size={40} color={theme.placeholder} />
+                            <Text style={[styles.emptyText, { color: theme.secondaryText }]}>
+                                {searchQuery ? `No results for "${searchQuery}"` : 'No hospitals found.'}
+                            </Text>
+                        </View>
+                    }
+                    onEndReached={() => {
+                        if (!searchQuery && !loading && !loadingMore && hasMore) {
+                            fetchHospitals(page + 1);
+                        }
+                    }}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={
+                        loadingMore
+                            ? <ActivityIndicator size="small" color={theme.primary} style={{ marginVertical: 15 }} />
+                            : null
+                    }
+                />
+            )}
         </View>
     );
 };
@@ -132,44 +230,97 @@ const HospitalScreen = () => {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    headerArea: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 15 },
+    headerArea: { paddingHorizontal: 20, paddingTop: 10, marginBottom: 12 },
     title: { fontSize: 26, fontWeight: 'bold' },
     subtitle: { fontSize: 13, marginTop: 4 },
-    list: { padding: 20, paddingTop: 0 },
-    card: { 
-        padding: 16, 
-        borderRadius: 20, 
-        marginBottom: 20, 
-        elevation: 4,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8
+
+    searchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: 16,
+        marginBottom: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        gap: 10,
+        elevation: 2,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
     },
-    cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
-    iconBox: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-    name: { fontSize: 18, fontWeight: 'bold', marginBottom: 2 },
-    infoRow: { flexDirection: 'row', alignItems: 'center' },
-    infoText: { fontSize: 12, marginLeft: 4 },
-    rating: { fontSize: 14, fontWeight: 'bold' },
-    badgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-    badge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-    dot: { width: 6, height: 6, borderRadius: 3, marginRight: 8 },
-    badgeText: { fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase' },
-    callBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 12 },
-    callBtnText: { color: '#fff', fontSize: 12, fontWeight: 'bold', marginLeft: 6 },
-    doctorsSection: { borderTopWidth: 1, paddingTop: 15 },
-    sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 },
-    sectionTitle: { fontSize: 14, fontWeight: '700' },
-    doctorsGrid: { gap: 10 },
-    doctorMiniCard: { padding: 10, borderRadius: 12, backgroundColor: 'rgba(0,0,0,0.02)', borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
-    docName: { fontSize: 13, fontWeight: 'bold' },
-    docSpecialty: { fontSize: 11, marginVertical: 2 },
-    docInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-    docInfoText: { fontSize: 10 },
-    statusDot: { width: 6, height: 6, borderRadius: 3 },
-    moreBtn: { alignItems: 'center', paddingVertical: 5 },
-    moreText: { fontSize: 12, fontWeight: 'bold' },
-    empty: { textAlign: 'center', marginTop: 50 }
+    searchInput: {
+        flex: 1,
+        fontSize: 14,
+        paddingVertical: 0,
+    },
+
+    list: { padding: 16, paddingTop: 4 },
+    card: {
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 14,
+        elevation: 3,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+    },
+    cardHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14, gap: 12 },
+    iconBox: { width: 46, height: 46, borderRadius: 13, justifyContent: 'center', alignItems: 'center' },
+    name: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
+    idText: { fontSize: 11 },
+    addressRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+    addressText: { fontSize: 12, flex: 1 },
+
+    badgeRow: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginBottom: 14,
+    },
+    crowdBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 10,
+        borderWidth: 1.5,
+    },
+    crowdDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
+    crowdText: { fontSize: 12, fontWeight: '700' },
+    emergencyBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 10,
+        borderWidth: 1.5,
+    },
+    emergencyText: { fontSize: 12, fontWeight: '700' },
+
+    cardFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 4,
+        paddingTop: 12,
+        borderTopWidth: 1,
+    },
+    seeMoreLink: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    seeMoreLinkText: {
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    ratingText: {
+        fontSize: 13,
+        fontWeight: '700',
+    },
+
+    emptyBox: { alignItems: 'center', marginTop: 60, gap: 12 },
+    emptyText: { fontSize: 14 },
 });
 
 export default HospitalScreen;

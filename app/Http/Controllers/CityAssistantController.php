@@ -46,42 +46,73 @@ class CityAssistantController extends Controller
         // For actual implementation, the user needs to add their API KEY in .env
         $apiKey = config('services.openai.key');
         
-        if (!$apiKey) {
-            // Basic Keyword Filtering Mock
-            $keywords = explode(' ', strtolower($query));
-            $matchedServices = $services->filter(function ($s) use ($keywords) {
-                foreach ($keywords as $k) {
-                    if (strlen($k) > 2 && (str_contains(strtolower($s->name), $k) || str_contains(strtolower($s->category), $k))) return true;
-                }
-                return false;
-            });
+        // Prepare fallback data structure
+        $keywords = explode(' ', strtolower($query));
+        $matchedServices = $services->filter(function ($s) use ($keywords) {
+            foreach ($keywords as $k) {
+                if (strlen($k) > 2 && (str_contains(strtolower($s->name), $k) || str_contains(strtolower($s->category), $k))) return true;
+            }
+            return false;
+        });
 
-            $matchedShops = $shops->filter(function ($s) use ($keywords) {
-                foreach ($keywords as $k) {
-                    if (strlen($k) > 2 && (str_contains(strtolower($s->name), $k) || str_contains(strtolower($s->category), $k) || str_contains(strtolower($s->description), $k))) return true;
-                }
-                return false;
-            });
+        $matchedShops = $shops->filter(function ($s) use ($keywords) {
+            foreach ($keywords as $k) {
+                if (strlen($k) > 2 && (str_contains(strtolower($s->name), $k) || str_contains(strtolower($s->category), $k) || str_contains(strtolower($s->description), $k))) return true;
+            }
+            return false;
+        });
 
-            $answer = "I'm currently in basic mode, but based on your query, here's what I found:";
+        $fallbackAnswer = "I couldn't find specific matches for '{$query}', but you can browse all our verified local services and shops.";
+        if ($matchedServices->isNotEmpty() || $matchedShops->isNotEmpty()) {
+            $fallbackAnswer = "I'm currently in basic mode, but based on your query, here's what I found:";
             if ($matchedServices->isNotEmpty()) {
-                $answer .= " I found " . $matchedServices->count() . " relevant service(s) like " . $matchedServices->first()->name . ".";
+                $fallbackAnswer .= " I found " . $matchedServices->count() . " relevant service(s) like " . $matchedServices->first()->name . ".";
             }
             if ($matchedShops->isNotEmpty()) {
-                $answer .= " Also, " . $matchedShops->count() . " shop(s) might be helpful, such as " . $matchedShops->first()->name . ".";
+                $fallbackAnswer .= " Also, " . $matchedShops->count() . " shop(s) might be helpful, such as " . $matchedShops->first()->name . ".";
             }
-            if ($matchedServices->isEmpty() && $matchedShops->isEmpty()) {
-                $answer = "I couldn't find specific matches for '{$query}', but you can browse all our verified local services and shops.";
-            }
-
-            return response()->json([
-                'answer' => $answer,
-                'recommendations' => [
-                    'services' => $matchedServices->take(3)->values(),
-                    'shops' => $matchedShops->take(3)->values()
-                ],
-                'categorySuggested' => $matchedServices->first()?->category ?? 'General'
-            ]);
         }
+
+        if ($apiKey) {
+            try {
+                $response = Http::timeout(5)->withHeaders([
+                    'Authorization' => 'Bearer ' . $apiKey,
+                    'Content-Type' => 'application/json',
+                ])->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => 'gpt-3.5-turbo',
+                    'messages' => [
+                        ['role' => 'system', 'content' => $prompt],
+                        ['role' => 'user', 'content' => $query],
+                    ],
+                    'max_tokens' => 300,
+                    'temperature' => 0.7,
+                ]);
+
+                if ($response->successful()) {
+                    $answer = $response->json()['choices'][0]['message']['content'];
+                    return response()->json([
+                        'answer' => $answer,
+                        'recommendations' => [
+                            'services' => $matchedServices->take(3)->values(),
+                            'shops' => $matchedShops->take(3)->values()
+                        ],
+                        'categorySuggested' => $matchedServices->first()?->category ?? 'General'
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('OpenAI Assistant API Error: ' . $e->getMessage(), [
+                    'exception' => $e
+                ]);
+            }
+        }
+
+        return response()->json([
+            'answer' => $fallbackAnswer,
+            'recommendations' => [
+                'services' => $matchedServices->take(3)->values(),
+                'shops' => $matchedShops->take(3)->values()
+            ],
+            'categorySuggested' => $matchedServices->first()?->category ?? 'General'
+        ]);
     }
 }

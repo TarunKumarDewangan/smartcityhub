@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\FirebaseAuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -10,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    public function register(Request $request, FirebaseAuthService $firebaseAuth)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -18,7 +19,16 @@ class AuthController extends Controller
             'phone' => 'required_without:email|string|max:15|unique:users',
             'password' => 'required|string|min:8',
             'role' => 'required|string|in:User,Admin,ShopOwner,ServiceProvider,HospitalAdmin,AmbulanceDriver',
+            'firebase_id_token' => 'required_with:phone|string',
         ]);
+
+        if ($request->filled('phone')) {
+            try {
+                $firebaseAuth->verifyPhoneNumber($request->firebase_id_token, $request->phone);
+            } catch (\RuntimeException $e) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+        }
 
         $user = User::create([
             'name' => $request->name,
@@ -26,7 +36,8 @@ class AuthController extends Controller
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
             'role' => $request->role,
-            'is_approved' => true,
+            'is_approved' => in_array($request->role, ['User', 'Admin']),
+            'phone_verified_at' => $request->filled('phone') ? now() : null,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -75,6 +86,15 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Logged out'
+        ]);
+    }
+
+    public function logoutAll(Request $request)
+    {
+        $request->user()->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Logged out from all devices'
         ]);
     }
 

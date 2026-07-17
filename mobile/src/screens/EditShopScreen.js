@@ -4,7 +4,7 @@ import apiClient from '../api/client';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import PhoneInput from '../components/PhoneInput';
-import { Camera, MapPin } from 'lucide-react-native';
+import { Camera, MapPin, Calendar, Clock } from 'lucide-react-native';
 
 const EditShopScreen = ({ route, navigation }) => {
   const { shop } = route.params;
@@ -19,7 +19,9 @@ const EditShopScreen = ({ route, navigation }) => {
     address: shop.address,
     contact_phone: initialPhone,
     latitude: shop.latitude ? shop.latitude.toString() : '',
-    longitude: shop.longitude ? shop.longitude.toString() : ''
+    longitude: shop.longitude ? shop.longitude.toString() : '',
+    opening_days: shop.opening_days || '',
+    opening_hours: shop.opening_hours || ''
   });
   const [image, setImage] = useState(shop.image_url);
   const [newImage, setNewImage] = useState(null);
@@ -78,6 +80,8 @@ const EditShopScreen = ({ route, navigation }) => {
     formData.append('contact_phone', '+91' + form.contact_phone);
     if (form.latitude) formData.append('latitude', form.latitude);
     if (form.longitude) formData.append('longitude', form.longitude);
+    if (form.opening_days) formData.append('opening_days', form.opening_days);
+    if (form.opening_hours) formData.append('opening_hours', form.opening_hours);
     formData.append('_method', 'PUT'); // Laravel requirement for multipart PUT
 
     if (newImage) {
@@ -158,6 +162,28 @@ const EditShopScreen = ({ route, navigation }) => {
           <Text style={styles.locationButtonText}>Capture Current Location</Text>
         </TouchableOpacity>
 
+        <Text style={styles.label}>Opening Days</Text>
+        <View style={styles.iconInputRow}>
+          <Calendar size={18} color="#666" />
+          <TextInput
+            style={styles.iconInput}
+            placeholder="e.g. Mon - Sat or Daily"
+            value={form.opening_days}
+            onChangeText={(v) => setForm({...form, opening_days: v})}
+          />
+        </View>
+
+        <Text style={styles.label}>Opening Hours</Text>
+        <View style={styles.iconInputRow}>
+          <Clock size={18} color="#666" />
+          <TextInput
+            style={styles.iconInput}
+            placeholder="e.g. 10:00 AM - 08:00 PM"
+            value={form.opening_hours}
+            onChangeText={(v) => setForm({...form, opening_hours: v})}
+          />
+        </View>
+
         <View style={styles.row}>
           <View style={{ flex: 1, marginRight: 10 }}>
             <Text style={styles.subLabel}>Latitude</Text>
@@ -203,6 +229,8 @@ const styles = StyleSheet.create({
   placeholderText: { color: '#666', marginTop: 5 },
   locationButton: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, borderWidth: 1, borderColor: '#007bff', marginBottom: 15, justifyContent: 'center' },
   locationButtonText: { color: '#007bff', fontWeight: 'bold', marginLeft: 10 },
+  iconInputRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f8f9fa', padding: 15, borderRadius: 10, marginBottom: 20, borderWidth: 1, borderColor: '#ddd' },
+  iconInput: { flex: 1, marginLeft: 10, fontSize: 15, color: '#333' },
   row: { flexDirection: 'row', justifyContent: 'space-between' },
   subLabel: { fontSize: 12, color: '#666', marginBottom: 5 }
 });

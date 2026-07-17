@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, FlatList, ActivityIndicator, Image, ScrollView, StatusBar } from 'react-native';
 import apiClient from '../api/client';
 import * as ImagePicker from 'expo-image-picker';
-import { Plus, Package, Trash2, Edit, Camera } from 'lucide-react-native';
+import { Plus, Package, Trash2, Edit, Camera, Star } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 
 const AddProductScreen = ({ route, navigation }) => {
@@ -23,7 +23,7 @@ const AddProductScreen = ({ route, navigation }) => {
   const fetchProducts = async () => {
     try {
       const response = await apiClient.get(`/shops/${shopId}/products`);
-      setProducts(response.data);
+      setProducts(Array.isArray(response.data) ? response.data : (response.data?.data || []));
     } catch (e) {
       console.error(e);
     } finally {
@@ -94,6 +94,18 @@ const AddProductScreen = ({ route, navigation }) => {
     }
   };
 
+  const handleToggleFeatured = async (product) => {
+    try {
+      await apiClient.put(`/products/${product.id}`, { is_featured: !product.is_featured });
+      fetchProducts();
+    } catch (e) {
+      const errorMsg = e.response?.data?.errors?.is_featured?.[0]
+        || e.response?.data?.message
+        || 'Failed to update top-selling status.';
+      Alert.alert('Error', errorMsg);
+    }
+  };
+
   const handleDeleteProduct = (productId) => {
     Alert.alert('Delete Product', 'Are you sure you want to delete this product?', [
       { text: 'Cancel', style: 'cancel' },
@@ -112,9 +124,25 @@ const AddProductScreen = ({ route, navigation }) => {
     <View style={styles.productItem}>
       <Package size={20} color="#666" style={{ marginRight: 10 }} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.productName}>{item.name}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={styles.productName}>{item.name}</Text>
+          {item.is_featured && (
+            <View style={styles.featuredBadge}>
+              <Star size={9} color="#fff" fill="#fff" />
+              <Text style={styles.featuredBadgeText}>Top Selling</Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.productPrice}>₹{item.price}</Text>
       </View>
+      <TouchableOpacity onPress={() => handleToggleFeatured(item)}>
+        <Star
+          size={20}
+          color={item.is_featured ? '#f59e0b' : '#ccc'}
+          fill={item.is_featured ? '#f59e0b' : 'transparent'}
+          style={{ marginRight: 15 }}
+        />
+      </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('EditProduct', { product: item, shopId })}>
         <Edit size={20} color="#007bff" style={{ marginRight: 15 }} />
       </TouchableOpacity>
@@ -193,6 +221,8 @@ const styles = StyleSheet.create({
   productItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
   productName: { fontSize: 16, fontWeight: '600' },
   productPrice: { color: '#28a745', fontWeight: 'bold' },
+  featuredBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f59e0b', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, marginLeft: 8 },
+  featuredBadgeText: { color: '#fff', fontSize: 9, fontWeight: 'bold', marginLeft: 3 },
   empty: { textAlign: 'center', color: '#999', marginTop: 20 },
   imageRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
   imagePickerSmall: { width: 50, height: 50, backgroundColor: '#fff', borderRadius: 5, borderWidth: 1, borderColor: '#ddd', borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', marginRight: 10, overflow: 'hidden' },

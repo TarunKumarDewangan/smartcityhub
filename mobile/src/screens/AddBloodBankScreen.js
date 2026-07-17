@@ -1,27 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator } from 'react-native';
 import { User, Mail, Lock, Droplet, Phone, MapPin, PlusCircle } from 'lucide-react-native';
 import apiClient from '../api/client';
 import { useTheme } from '../context/ThemeContext';
-
-const InputField = ({ label, icon: Icon, value, onChangeText, placeholder, secureTextEntry, keyboardType, multiline, theme }) => (
-    <View style={styles.inputGroup}>
-        <Text style={[styles.label, { color: theme.secondaryText }]}>{label}</Text>
-        <View style={[styles.inputWrapper, { backgroundColor: theme.input, borderColor: theme.border }, multiline && { alignItems: 'flex-start', paddingTop: 12 }]}>
-            <Icon size={18} color={theme.iconDefault} style={multiline ? { marginTop: 2 } : {}} />
-            <TextInput 
-                style={[styles.input, { color: theme.text }, multiline && { height: 60 }]}
-                value={value}
-                onChangeText={onChangeText}
-                placeholder={placeholder}
-                placeholderTextColor={theme.placeholder}
-                secureTextEntry={secureTextEntry}
-                keyboardType={keyboardType}
-                multiline={multiline}
-            />
-        </View>
-    </View>
-);
+import InputField from '../components/InputField';
 
 const AddBloodBankScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(false);

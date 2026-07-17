@@ -18,7 +18,7 @@ const AmbulanceScreen = ({ navigation }) => {
   const fetchAmbulances = async () => {
     try {
       const response = await apiClient.get('/ambulances');
-      setAmbulances(response.data);
+      setAmbulances(Array.isArray(response.data) ? response.data : (response.data?.data || []));
     } catch (e) {
       console.error(e);
     } finally {
