@@ -26,6 +26,7 @@ use App\Http\Controllers\DoctorController;
 
 // Public Auth Routes
 Route::middleware('throttle:auth')->group(function () {
+    Route::post('/send-otp', [AuthController::class, 'sendOtp']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });

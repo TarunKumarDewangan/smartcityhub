@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Services\FirebaseAuthService;
+use App\Services\BulkBlasterOtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -11,7 +11,22 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function register(Request $request, FirebaseAuthService $firebaseAuth)
+    public function sendOtp(Request $request, BulkBlasterOtpService $otpService)
+    {
+        $request->validate([
+            'phone' => 'required|string|max:15|unique:users',
+        ]);
+
+        try {
+            $otpService->sendOtp($request->phone);
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['message' => 'OTP sent successfully']);
+    }
+
+    public function register(Request $request, BulkBlasterOtpService $otpService)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -19,14 +34,12 @@ class AuthController extends Controller
             'phone' => 'required_without:email|string|max:15|unique:users',
             'password' => 'required|string|min:8',
             'role' => 'required|string|in:User,Admin,ShopOwner,ServiceProvider,HospitalAdmin,AmbulanceDriver',
-            'firebase_id_token' => 'required_with:phone|string',
+            'otp' => 'required_with:phone|string',
         ]);
 
         if ($request->filled('phone')) {
-            try {
-                $firebaseAuth->verifyPhoneNumber($request->firebase_id_token, $request->phone);
-            } catch (\RuntimeException $e) {
-                return response()->json(['message' => $e->getMessage()], 422);
+            if (!$otpService->verifyOtp($request->phone, $request->otp)) {
+                return response()->json(['message' => 'Invalid or expired verification code. Please request a new one.'], 422);
             }
         }
 

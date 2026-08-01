@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import auth from '@react-native-firebase/auth';
 import apiClient from '../api/client';
 import PhoneInput from '../components/PhoneInput';
 import { useTheme } from '../context/ThemeContext';
@@ -17,7 +16,6 @@ const RegisterScreen = ({ navigation }) => {
 
   // OTP verification step: 'form' -> 'otp'
   const [step, setStep] = useState('form');
-  const [confirmation, setConfirmation] = useState(null);
   const [otpCode, setOtpCode] = useState('');
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -35,12 +33,11 @@ const RegisterScreen = ({ navigation }) => {
 
     setSendingOtp(true);
     try {
-      const result = await auth().signInWithPhoneNumber('+91' + phone);
-      setConfirmation(result);
+      await apiClient.post('/send-otp', { phone: '+91' + phone });
       setOtpCode('');
       setStep('otp');
     } catch (e) {
-      Alert.alert('Error', e.message || 'Failed to send verification code. Please try again.');
+      Alert.alert('Error', e.response?.data?.message || 'Failed to send verification code. Please try again.');
     } finally {
       setSendingOtp(false);
     }
@@ -54,37 +51,19 @@ const RegisterScreen = ({ navigation }) => {
 
     setVerifying(true);
     try {
-      const userCredential = await confirmation.confirm(otpCode);
-      const firebaseIdToken = await userCredential.user.getIdToken();
-
       await apiClient.post('/register', {
         name,
         email,
         phone: '+91' + phone,
         password,
         role,
-        firebase_id_token: firebaseIdToken,
+        otp: otpCode,
       });
-
-      // The app authenticates via its own Sanctum token; Firebase was only
-      // needed to prove phone ownership. Best-effort cleanup — must never
-      // turn an already-successful registration into a reported failure.
-      try {
-        await auth().signOut();
-      } catch (signOutError) {
-        console.warn('Firebase sign-out after registration failed (non-critical):', signOutError);
-      }
 
       Alert.alert('Success', 'Account created! Please login.');
       navigation.navigate('Login');
     } catch (e) {
-      if (e.code === 'auth/invalid-verification-code') {
-        Alert.alert('Error', 'Incorrect code. Please check and try again.');
-      } else if (e.code === 'auth/code-expired') {
-        Alert.alert('Error', 'This code has expired. Please resend a new one.');
-      } else {
-        Alert.alert('Error', e.response?.data?.message || e.message || 'Registration failed');
-      }
+      Alert.alert('Error', e.response?.data?.message || 'Registration failed');
     } finally {
       setVerifying(false);
     }
@@ -92,7 +71,6 @@ const RegisterScreen = ({ navigation }) => {
 
   const handleChangeNumber = () => {
     setStep('form');
-    setConfirmation(null);
     setOtpCode('');
   };
 
