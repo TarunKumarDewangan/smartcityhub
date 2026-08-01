@@ -37,7 +37,7 @@ return [
 
     'bulkblaster' => [
         'api_key' => env('BULKBLASTER_API_KEY'),
-        'endpoint' => env('BULKBLASTER_ENDPOINT', 'https://bulkblaster-biotp-api-290441963693.asia-south1.run.app/send-otp'),
+        'endpoint' => env('BULKBLASTER_ENDPOINT', 'https://bulkblaster-biotp-api-290441563653.asia-south1.run.app/send-otp'),
     ],
 
 ];
