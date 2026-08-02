@@ -10,6 +10,8 @@ use App\Models\Helpline;
 use App\Models\BloodBank;
 use App\Models\Hospital;
 use App\Models\Ambulance;
+use App\Http\Resources\ShopResource;
+use App\Http\Resources\ServiceResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +32,58 @@ class AdminController extends Controller
         $user->is_approved = true;
         $user->save();
         return response()->json(['message' => 'User approved successfully']);
+    }
+
+    public function allShops(Request $request)
+    {
+        $query = Shop::with('owner');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('category', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->has('approved')) {
+            $query->where('is_approved', $request->boolean('approved'));
+        }
+
+        $query->orderBy('created_at', 'desc');
+
+        if ($request->has('page') || $request->has('paginate')) {
+            $perPage = $request->input('per_page', 15);
+            return ShopResource::collection($query->paginate($perPage));
+        }
+
+        return ShopResource::collection($query->get());
+    }
+
+    public function allServices(Request $request)
+    {
+        $query = Service::with('provider');
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('category', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->has('approved')) {
+            $query->where('is_approved', $request->boolean('approved'));
+        }
+
+        $query->orderBy('created_at', 'desc');
+
+        if ($request->has('page') || $request->has('paginate')) {
+            $perPage = $request->input('per_page', 15);
+            return ServiceResource::collection($query->paginate($perPage));
+        }
+
+        return ServiceResource::collection($query->get());
     }
 
     public function pendingShops()
@@ -214,7 +268,10 @@ class AdminController extends Controller
             'password' => 'required|min:6',
             'bank_name' => 'required',
             'address' => 'required',
-            'contact' => 'required'
+            'contact' => 'required',
+            'blood_groups_available' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
         return DB::transaction(function () use ($request) {
@@ -230,6 +287,9 @@ class AdminController extends Controller
                 'name' => $request->bank_name,
                 'address' => $request->address,
                 'contact' => $request->contact,
+                'blood_groups_available' => $request->blood_groups_available,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
                 'user_id' => $user->id
             ]);
 

@@ -41,6 +41,7 @@ class UpdateShopRequest extends FormRequest
             'image' => 'nullable|image|max:2048',
             'opening_days' => 'nullable|string',
             'opening_hours' => 'nullable|string',
+            'is_approved' => 'sometimes|boolean',
         ];
     }
 }

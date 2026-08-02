@@ -16,9 +16,37 @@ const EditProductScreen = ({ route, navigation }) => {
   const [isFeatured, setIsFeatured] = useState(product.is_featured ?? false);
   const [loading, setLoading] = useState(false);
 
-  const pickImage = async (setter, newSetter) => {
+  const pickImage = (setter, newSetter) => {
+    Alert.alert('Update Product Photo', 'Choose an option', [
+      { text: 'Take Photo', onPress: () => captureFromCamera(setter, newSetter) },
+      { text: 'Choose from Gallery', onPress: () => pickFromGallery(setter, newSetter) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const pickFromGallery = async (setter, newSetter) => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setter(uri);
+      newSetter(uri);
+    }
+  };
+
+  const captureFromCamera = async (setter, newSetter) => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Camera access is needed to take a photo.');
+      return;
+    }
+
+    let result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,

@@ -111,8 +111,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/users', [AdminController::class, 'createUser']);
         Route::put('/users/{id}', [AdminController::class, 'updateUser']);
         Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+        Route::get('/shops', [AdminController::class, 'allShops']);
         Route::get('/pending-shops', [AdminController::class, 'pendingShops']);
         Route::post('/approve-shop/{id}', [AdminController::class, 'approveShop']);
+        Route::get('/services', [AdminController::class, 'allServices']);
         Route::get('/pending-services', [AdminController::class, 'pendingServices']);
         Route::post('/approve-service/{id}', [AdminController::class, 'approveService']);
         Route::post('/create-blood-bank', [AdminController::class, 'createBloodBankProvider']);

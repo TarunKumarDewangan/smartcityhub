@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, SafeAreaView, Dimensions, StatusBar, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, SafeAreaView, Dimensions, StatusBar, Platform, Switch } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { Menu, X, Home, HeartPulse, ShoppingBag, Wrench, User, LogOut, LogIn, ChevronRight, Building } from 'lucide-react-native';
+import { Menu, X, Home, HeartPulse, ShoppingBag, Wrench, User, LogOut, LogIn, ChevronRight, Building, Moon, Sun } from 'lucide-react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -11,7 +11,7 @@ const HeaderMenu = () => {
   const [visible, setVisible] = useState(false);
   const navigation = useNavigation();
   const { user, logout } = useAuth();
-  const { theme, isDark } = useTheme();
+  const { theme, isDark, toggleTheme } = useTheme();
 
   const menuItems = [
     { name: 'Home', icon: <Home size={22} color={theme.primary} />, screen: 'Home', tab: 'Main' },
@@ -110,6 +110,20 @@ const HeaderMenu = () => {
                 </TouchableOpacity>
               )}
 
+              <Text style={[styles.sectionTitle, { color: theme.secondaryText, marginTop: 10 }]}>Appearance</Text>
+              <View style={[styles.themeRow, { backgroundColor: theme.input }]}>
+                <View style={[styles.iconWrapper, { backgroundColor: (isDark ? '#fbbf24' : '#6366f1') + '20' }]}>
+                  {isDark ? <Moon size={22} color="#fbbf24" /> : <Sun size={22} color="#6366f1" />}
+                </View>
+                <Text style={[styles.menuText, { color: theme.text, flex: 1 }]}>Dark Mode</Text>
+                <Switch
+                  value={isDark}
+                  onValueChange={toggleTheme}
+                  trackColor={{ false: theme.border, true: theme.primary + '80' }}
+                  thumbColor={isDark ? theme.primary : (Platform.OS === 'android' ? '#f4f3f4' : '#fff')}
+                />
+              </View>
+
               <View style={[styles.footer, { borderTopColor: theme.divider }]}>
                  <Text style={[styles.versionText, { color: theme.placeholder, marginBottom: 15 }]}>App Version 1.0.3</Text>
                 {user ? (
@@ -194,6 +208,14 @@ const styles = StyleSheet.create({
     marginRight: 15 
   },
   menuText: { fontSize: 16, fontWeight: '600' },
+  themeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    marginBottom: 8
+  },
   footer: { marginTop: 'auto', paddingBottom: 40, borderTopWidth: 1, paddingTop: 20 },
   logoutBtn: { 
     flexDirection: 'row', 

@@ -18,6 +18,7 @@ class Shop extends Model
         'longitude',
         'opening_days',
         'opening_hours',
+        'is_approved',
     ];
 
     protected $appends = ['average_rating', 'rating_count'];

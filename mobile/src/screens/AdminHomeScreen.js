@@ -93,8 +93,8 @@ const AdminHomeScreen = ({ navigation }) => {
       {/* Approvals Section */}
       <Text style={[styles.sectionTitle, { color: theme.secondaryText }]}>Approvals</Text>
       <AdminCard title="User Approvals"    count={stats?.users_pending}    icon={Users}       color="#3b82f6" theme={theme} isDark={isDark} onPress={() => navigation.navigate('UserApproval')} />
-      <AdminCard title="Shop Approvals"    count={stats?.shops_pending}    icon={ShoppingBag} color="#22c55e" theme={theme} isDark={isDark} onPress={() => navigation.navigate('ResourceApproval', { type: 'shop' })} />
-      <AdminCard title="Service Approvals" count={stats?.services_pending} icon={Wrench}      color="#f59e0b" theme={theme} isDark={isDark} onPress={() => navigation.navigate('ResourceApproval', { type: 'service' })} />
+      <AdminCard title="Shop Approvals"    count={stats?.shops_pending}    icon={ShoppingBag} color="#22c55e" theme={theme} isDark={isDark} onPress={() => navigation.navigate('ManageAllShops')} />
+      <AdminCard title="Service Approvals" count={stats?.services_pending} icon={Wrench}      color="#f59e0b" theme={theme} isDark={isDark} onPress={() => navigation.navigate('ManageAllServices')} />
 
       {/* User Management Section */}
       <Text style={[styles.sectionTitle, { color: theme.secondaryText }]}>User Management</Text>

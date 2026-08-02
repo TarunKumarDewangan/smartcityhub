@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Alert, ActivityIndicator
 } from 'react-native';
-import { Droplet, Phone, Trash2, Plus } from 'lucide-react-native';
+import { Droplet, Phone, Trash2, Plus, Edit } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import apiClient from '../api/client';
 import { useTheme } from '../context/ThemeContext';
@@ -61,6 +61,9 @@ const AdminBloodBankListScreen = ({ navigation }) => {
           <Text style={[styles.contact, { color: theme.primary }]}> {item.contact}</Text>
         </View>
       </View>
+      <TouchableOpacity style={styles.deleteBtn} onPress={() => navigation.navigate('AddEditBloodBank', { bloodBank: item })}>
+        <Edit size={20} color={theme.primary} />
+      </TouchableOpacity>
       <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item)}>
         <Trash2 size={20} color={theme.error} />
       </TouchableOpacity>

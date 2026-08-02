@@ -44,13 +44,19 @@ class ServiceController extends Controller
 
     public function update(UpdateServiceRequest $request, Service $service)
     {
-        $service->update($request->validated());
+        $validated = $request->validated();
+
+        if ($request->user()->role !== 'Admin') {
+            unset($validated['is_approved']);
+        }
+
+        $service->update($validated);
         return new ServiceResource($service);
     }
 
     public function destroy(Request $request, Service $service)
     {
-        if ($service->provider_id !== $request->user()->id) {
+        if ($service->provider_id !== $request->user()->id && $request->user()->role !== 'Admin') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

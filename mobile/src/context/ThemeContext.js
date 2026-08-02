@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ThemeContext = createContext();
+const THEME_STORAGE_KEY = 'theme_preference';
 
 export const Colors = {
     light: {
@@ -45,17 +47,38 @@ export const Colors = {
 };
 
 export const ThemeProvider = ({ children }) => {
-    const colorScheme = useColorScheme();
-    const [isDark, setIsDark] = useState(colorScheme === 'dark');
+    const systemColorScheme = useColorScheme();
+    const [isDark, setIsDark] = useState(systemColorScheme === 'dark');
 
+    // Load the user's saved preference once on startup. If they've never
+    // chosen one, fall back to the system's light/dark setting.
     useEffect(() => {
-        setIsDark(colorScheme === 'dark');
-    }, [colorScheme]);
+        (async () => {
+            try {
+                const stored = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+                if (stored === 'light' || stored === 'dark') {
+                    setIsDark(stored === 'dark');
+                }
+            } catch (e) {
+                console.error('Failed to load theme preference', e);
+            }
+        })();
+    }, []);
 
     const theme = isDark ? Colors.dark : Colors.light;
 
+    const toggleTheme = async () => {
+        const newValue = !isDark;
+        setIsDark(newValue);
+        try {
+            await AsyncStorage.setItem(THEME_STORAGE_KEY, newValue ? 'dark' : 'light');
+        } catch (e) {
+            console.error('Failed to save theme preference', e);
+        }
+    };
+
     return (
-        <ThemeContext.Provider value={{ theme, isDark, toggleTheme: () => setIsDark(!isDark) }}>
+        <ThemeContext.Provider value={{ theme, isDark, toggleTheme }}>
             {children}
         </ThemeContext.Provider>
     );

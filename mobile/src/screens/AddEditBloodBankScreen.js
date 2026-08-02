@@ -1,45 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, StatusBar, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator, TextInput } from 'react-native';
 import * as Location from 'expo-location';
-import apiClient from '../api/client';
 import { Droplet, Phone, MapPin, Info, Save } from 'lucide-react-native';
+import apiClient from '../api/client';
 import { useTheme } from '../context/ThemeContext';
 import InputField from '../components/InputField';
 
-const ManageBloodBankScreen = ({ navigation }) => {
-    const [loading, setLoading] = useState(true);
+const AddEditBloodBankScreen = ({ route, navigation }) => {
+    const { bloodBank: initial } = route.params;
+    const { theme, isDark } = useTheme();
     const [submitting, setSubmitting] = useState(false);
     const [locating, setLocating] = useState(false);
-    const { theme, isDark } = useTheme();
     const [bloodBank, setBloodBank] = useState({
-        name: '',
-        address: '',
-        contact: '',
-        blood_groups_available: '',
-        latitude: '',
-        longitude: ''
+        name: initial.name || '',
+        address: initial.address || '',
+        contact: initial.contact || '',
+        blood_groups_available: initial.blood_groups_available || '',
+        latitude: initial.latitude != null ? initial.latitude.toString() : '',
+        longitude: initial.longitude != null ? initial.longitude.toString() : '',
     });
-
-    useEffect(() => {
-        fetchMyBloodBank();
-    }, []);
-
-    const fetchMyBloodBank = async () => {
-        try {
-            const response = await apiClient.get('/my-blood-bank');
-            const data = response.data?.data || response.data;
-            setBloodBank({
-                ...data,
-                latitude: data.latitude != null ? data.latitude.toString() : '',
-                longitude: data.longitude != null ? data.longitude.toString() : '',
-            });
-        } catch (e) {
-            console.error(e);
-            Alert.alert('Error', 'Failed to load blood bank details');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const getCurrentLocation = async () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
@@ -73,51 +52,44 @@ const ManageBloodBankScreen = ({ navigation }) => {
 
         setSubmitting(true);
         try {
-            await apiClient.put(`/blood-banks/${bloodBank.id}`, bloodBank);
-            Alert.alert('Success', 'Blood bank details updated successfully!');
+            await apiClient.put(`/blood-banks/${initial.id}`, bloodBank);
+            Alert.alert('Success', 'Blood bank updated successfully!', [
+                { text: 'OK', onPress: () => navigation.goBack() }
+            ]);
         } catch (e) {
             console.error(e);
-            Alert.alert('Error', 'Failed to update details');
+            Alert.alert('Error', e.response?.data?.message || 'Failed to update blood bank');
         } finally {
             setSubmitting(false);
         }
     };
 
-    if (loading) return (
-        <View style={[styles.center, { backgroundColor: theme.background }]}>
-            <ActivityIndicator size="large" color={theme.error} />
-        </View>
-    );
-
     return (
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={[styles.container, { backgroundColor: theme.background }]}
         >
             <ScrollView contentContainerStyle={styles.content}>
                 <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
-                
+
                 <View style={styles.header}>
-                    <View style={[styles.iconContainer, { backgroundColor: isDark ? theme.error + '20' : '#fff0f0' }]}>
-                        <Droplet size={30} color={theme.error} fill={theme.error} />
-                    </View>
-                    <Text style={[styles.title, { color: theme.text }]}>Manage Blood Bank</Text>
-                    <Text style={[styles.subtitle, { color: theme.secondaryText }]}>Update your stocks and contact information</Text>
+                    <Text style={[styles.title, { color: theme.text }]}>Edit Blood Bank</Text>
+                    <Text style={[styles.subtitle, { color: theme.secondaryText }]}>Update details, stock & location</Text>
                 </View>
 
                 <View style={[styles.card, { backgroundColor: theme.card, shadowColor: isDark ? '#000' : '#d1d5db' }]}>
-                    <InputField 
-                        label="Bank Name *" 
-                        icon={Info} 
+                    <InputField
+                        label="Bank Name *"
+                        icon={Info}
                         value={bloodBank.name}
                         onChangeText={(text) => setBloodBank({...bloodBank, name: text})}
                         placeholder="e.g. City Central Blood Bank"
                         theme={theme}
                     />
 
-                    <InputField 
-                        label="Address *" 
-                        icon={MapPin} 
+                    <InputField
+                        label="Address *"
+                        icon={MapPin}
                         value={bloodBank.address}
                         onChangeText={(text) => setBloodBank({...bloodBank, address: text})}
                         placeholder="Full address"
@@ -125,9 +97,9 @@ const ManageBloodBankScreen = ({ navigation }) => {
                         theme={theme}
                     />
 
-                    <InputField 
-                        label="Contact Phone *" 
-                        icon={Phone} 
+                    <InputField
+                        label="Contact Phone *"
+                        icon={Phone}
                         value={bloodBank.contact}
                         onChangeText={(text) => setBloodBank({...bloodBank, contact: text})}
                         placeholder="Phone number"
@@ -135,9 +107,9 @@ const ManageBloodBankScreen = ({ navigation }) => {
                         theme={theme}
                     />
 
-                    <InputField 
-                        label="Blood Groups Available" 
-                        icon={Droplet} 
+                    <InputField
+                        label="Blood Groups Available"
+                        icon={Droplet}
                         value={bloodBank.blood_groups_available}
                         onChangeText={(text) => setBloodBank({...bloodBank, blood_groups_available: text})}
                         placeholder="e.g. A+, B+, AB-, O+ (Separate with commas)"
@@ -209,39 +181,21 @@ const ManageBloodBankScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: { flex: 1 },
     content: { padding: 20 },
-    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    header: { alignItems: 'center', marginBottom: 25 },
-    iconContainer: { 
-        width: 60, 
-        height: 60, 
-        borderRadius: 30, 
-        justifyContent: 'center', 
-        alignItems: 'center',
-        marginBottom: 15
-    },
+    header: { marginBottom: 25 },
     title: { fontSize: 24, fontWeight: 'bold' },
-    subtitle: { fontSize: 14, marginTop: 5, textAlign: 'center' },
+    subtitle: { fontSize: 14, marginTop: 5 },
     card: { borderRadius: 16, padding: 20, elevation: 2, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
-    inputGroup: { marginBottom: 15 },
     label: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
-    inputWrapper: { 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        borderRadius: 12, 
-        paddingHorizontal: 15, 
-        borderWidth: 1
-    },
-    input: { flex: 1, paddingVertical: 12, marginLeft: 10, fontSize: 15 },
     locationButton: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 15, justifyContent: 'center' },
     locationButtonText: { fontWeight: 'bold', marginLeft: 10 },
     row: { flexDirection: 'row', justifyContent: 'space-between' },
     subLabel: { fontSize: 12, marginBottom: 5 },
     coordInput: { padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 15 },
     button: {
-        flexDirection: 'row', 
-        borderRadius: 12, 
-        height: 55, 
-        justifyContent: 'center', 
+        flexDirection: 'row',
+        borderRadius: 12,
+        height: 55,
+        justifyContent: 'center',
         alignItems: 'center',
         marginTop: 10
     },
@@ -249,4 +203,4 @@ const styles = StyleSheet.create({
     buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold', marginLeft: 10 }
 });
 
-export default ManageBloodBankScreen;
+export default AddEditBloodBankScreen;

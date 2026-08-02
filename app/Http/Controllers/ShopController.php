@@ -71,6 +71,10 @@ class ShopController extends Controller
     {
         $validated = $request->validated();
 
+        if ($request->user()->role !== 'Admin') {
+            unset($validated['is_approved']);
+        }
+
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('shops', 'public');
             $validated['image_url'] = rtrim(config('app.url'), '/') . '/storage/' . $path;
@@ -82,7 +86,7 @@ class ShopController extends Controller
 
     public function destroy(Request $request, Shop $shop)
     {
-        if ($shop->owner_id !== $request->user()->id) {
+        if ($shop->owner_id !== $request->user()->id && $request->user()->role !== 'Admin') {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

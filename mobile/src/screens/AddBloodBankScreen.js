@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator, TextInput } from 'react-native';
+import * as Location from 'expo-location';
 import { User, Mail, Lock, Droplet, Phone, MapPin, PlusCircle } from 'lucide-react-native';
 import apiClient from '../api/client';
 import { useTheme } from '../context/ThemeContext';
@@ -7,6 +8,7 @@ import InputField from '../components/InputField';
 
 const AddBloodBankScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(false);
+    const [locating, setLocating] = useState(false);
     const { theme, isDark } = useTheme();
     const [formData, setFormData] = useState({
         name: '',
@@ -14,8 +16,35 @@ const AddBloodBankScreen = ({ navigation }) => {
         password: '',
         bank_name: '',
         address: '',
-        contact: ''
+        contact: '',
+        blood_groups_available: '',
+        latitude: '',
+        longitude: ''
     });
+
+    const getCurrentLocation = async () => {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert('Permission Denied', 'Permission to access location was denied');
+            return;
+        }
+
+        setLocating(true);
+        try {
+            let location = await Location.getCurrentPositionAsync({});
+            setFormData({
+                ...formData,
+                latitude: location.coords.latitude.toString(),
+                longitude: location.coords.longitude.toString()
+            });
+            Alert.alert('Success', 'Location captured!');
+        } catch (e) {
+            console.error(e);
+            Alert.alert('Error', 'Failed to get current location');
+        } finally {
+            setLocating(false);
+        }
+    };
 
     const handleCreate = async () => {
         const { name, email, password, bank_name, address, contact } = formData;
@@ -99,18 +128,68 @@ const AddBloodBankScreen = ({ navigation }) => {
                         keyboardType="phone-pad"
                         theme={theme}
                     />
-                    <InputField 
-                        label="Address" 
-                        icon={MapPin} 
+                    <InputField
+                        label="Address"
+                        icon={MapPin}
                         value={formData.address}
                         onChangeText={(text) => setFormData({...formData, address: text})}
                         placeholder="Full physical address"
                         multiline
                         theme={theme}
                     />
+                    <InputField
+                        label="Blood Groups Available"
+                        icon={Droplet}
+                        value={formData.blood_groups_available}
+                        onChangeText={(text) => setFormData({...formData, blood_groups_available: text})}
+                        placeholder="e.g. A+, B+, AB-, O+ (Separate with commas)"
+                        multiline
+                        theme={theme}
+                    />
 
-                    <TouchableOpacity 
-                        style={[styles.button, { backgroundColor: theme.primary }, loading && styles.disabledButton]} 
+                    <Text style={[styles.label, { color: theme.text }]}>Location Coordinates (Optional)</Text>
+                    <TouchableOpacity
+                        style={[styles.locationButton, { borderColor: theme.error }]}
+                        onPress={getCurrentLocation}
+                        disabled={locating}
+                    >
+                        {locating ? (
+                            <ActivityIndicator color={theme.error} size="small" />
+                        ) : (
+                            <>
+                                <MapPin size={20} color={theme.error} />
+                                <Text style={[styles.locationButtonText, { color: theme.error }]}>Capture Current Location</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+
+                    <View style={styles.row}>
+                        <View style={{ flex: 1, marginRight: 10 }}>
+                            <Text style={[styles.subLabel, { color: theme.secondaryText }]}>Latitude</Text>
+                            <TextInput
+                                style={[styles.coordInput, { backgroundColor: theme.input, borderColor: theme.border, color: theme.text }]}
+                                placeholder="e.g. 21.1234"
+                                placeholderTextColor={theme.placeholder}
+                                value={formData.latitude}
+                                onChangeText={(text) => setFormData({...formData, latitude: text})}
+                                keyboardType="numeric"
+                            />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={[styles.subLabel, { color: theme.secondaryText }]}>Longitude</Text>
+                            <TextInput
+                                style={[styles.coordInput, { backgroundColor: theme.input, borderColor: theme.border, color: theme.text }]}
+                                placeholder="e.g. 81.5678"
+                                placeholderTextColor={theme.placeholder}
+                                value={formData.longitude}
+                                onChangeText={(text) => setFormData({...formData, longitude: text})}
+                                keyboardType="numeric"
+                            />
+                        </View>
+                    </View>
+
+                    <TouchableOpacity
+                        style={[styles.button, { backgroundColor: theme.primary }, loading && styles.disabledButton]}
                         onPress={handleCreate}
                         disabled={loading}
                     >
@@ -138,6 +217,12 @@ const styles = StyleSheet.create({
     card: { borderRadius: 16, padding: 20, elevation: 2, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
     sectionHeader: { fontSize: 16, fontWeight: 'bold', marginBottom: 15, marginTop: 5 },
     inputGroup: { marginBottom: 15 },
+    label: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
+    locationButton: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 15, justifyContent: 'center' },
+    locationButtonText: { fontWeight: 'bold', marginLeft: 10 },
+    row: { flexDirection: 'row', justifyContent: 'space-between' },
+    subLabel: { fontSize: 12, marginBottom: 5 },
+    coordInput: { padding: 12, borderRadius: 10, borderWidth: 1, marginBottom: 15 },
     label: { fontSize: 13, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
     inputWrapper: { 
         flexDirection: 'row', 

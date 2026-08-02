@@ -49,6 +49,9 @@ import HospitalDetailScreen from '../screens/HospitalDetailScreen';
 import ServiceDetailScreen from '../screens/ServiceDetailScreen';
 import ManageAllUsersScreen from '../screens/ManageAllUsersScreen';
 import AddEditUserScreen from '../screens/AddEditUserScreen';
+import AddEditBloodBankScreen from '../screens/AddEditBloodBankScreen';
+import ManageAllShopsScreen from '../screens/ManageAllShopsScreen';
+import ManageAllServicesScreen from '../screens/ManageAllServicesScreen';
 
 import { useTheme } from '../context/ThemeContext';
 
@@ -97,6 +100,9 @@ const renderSharedScreens = (StackInstance) => [
   <StackInstance.Screen key="ServiceDetail" name="ServiceDetail" component={ServiceDetailScreen} options={{ headerShown: false }} />,
   <StackInstance.Screen key="ManageAllUsers" name="ManageAllUsers" component={ManageAllUsersScreen} options={{ headerShown: true, title: 'Manage Users' }} />,
   <StackInstance.Screen key="AddEditUser" name="AddEditUser" component={AddEditUserScreen} options={{ headerShown: true, title: 'User Details' }} />,
+  <StackInstance.Screen key="AddEditBloodBank" name="AddEditBloodBank" component={AddEditBloodBankScreen} options={{ headerShown: true, title: 'Edit Blood Bank' }} />,
+  <StackInstance.Screen key="ManageAllShops" name="ManageAllShops" component={ManageAllShopsScreen} options={{ headerShown: true, title: 'Manage Shops' }} />,
+  <StackInstance.Screen key="ManageAllServices" name="ManageAllServices" component={ManageAllServicesScreen} options={{ headerShown: true, title: 'Manage Services' }} />,
 ];
 
 const HomeStackScreen = () => {
@@ -300,6 +306,9 @@ const AppNavigator = () => {
         <Stack.Screen name="ServiceDetail" component={ServiceDetailScreen} options={{ headerShown: false }} />
         <Stack.Screen name="ManageAllUsers" component={ManageAllUsersScreen} options={{ headerShown: true, title: 'Manage Users' }} />
         <Stack.Screen name="AddEditUser" component={AddEditUserScreen} options={{ headerShown: true, title: 'User Details' }} />
+        <Stack.Screen name="AddEditBloodBank" component={AddEditBloodBankScreen} options={{ headerShown: true, title: 'Edit Blood Bank' }} />
+        <Stack.Screen name="ManageAllShops" component={ManageAllShopsScreen} options={{ headerShown: true, title: 'Manage Shops' }} />
+        <Stack.Screen name="ManageAllServices" component={ManageAllServicesScreen} options={{ headerShown: true, title: 'Manage Services' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

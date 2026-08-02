@@ -39,6 +39,7 @@ class UpdateServiceRequest extends FormRequest
             'is_available' => 'boolean',
             'working_days' => 'nullable|string',
             'working_hours' => 'nullable|string',
+            'is_approved' => 'sometimes|boolean',
         ];
     }
 }

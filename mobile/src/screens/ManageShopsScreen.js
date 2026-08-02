@@ -89,7 +89,7 @@ const ManageShopsScreen = ({ navigation }) => {
       <View style={styles.infoBanner}>
           <Info size={16} color="#0369a1" />
           <Text style={styles.infoText}>
-              Note: New shops are visible to the public but awaiting admin validation for official status.
+              Note: New shops need admin approval before they appear in the public Market listing.
           </Text>
       </View>
 

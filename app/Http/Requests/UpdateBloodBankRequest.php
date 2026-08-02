@@ -33,6 +33,8 @@ class UpdateBloodBankRequest extends FormRequest
             'address' => 'string',
             'contact' => 'string',
             'blood_groups_available' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
         ];
     }
 }

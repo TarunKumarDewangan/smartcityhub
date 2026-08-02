@@ -20,6 +20,8 @@ class BloodBankResource extends JsonResource
             'address' => $this->address,
             'contact' => $this->contact,
             'blood_groups_available' => $this->blood_groups_available,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
             'user_id' => $this->user_id,
             'user' => new UserResource($this->whenLoaded('user')),
             'created_at' => $this->created_at,

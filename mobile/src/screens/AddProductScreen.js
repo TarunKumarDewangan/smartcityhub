@@ -31,9 +31,35 @@ const AddProductScreen = ({ route, navigation }) => {
     }
   };
 
-  const pickImage = async (setter) => {
+  const pickImage = (setter) => {
+    Alert.alert('Add Product Photo', 'Choose an option', [
+      { text: 'Take Photo', onPress: () => captureFromCamera(setter) },
+      { text: 'Choose from Gallery', onPress: () => pickFromGallery(setter) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const pickFromGallery = async (setter) => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setter(result.assets[0].uri);
+    }
+  };
+
+  const captureFromCamera = async (setter) => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Camera access is needed to take a photo.');
+      return;
+    }
+
+    let result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
