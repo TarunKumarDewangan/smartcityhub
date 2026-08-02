@@ -35,12 +35,12 @@ class ProductController extends Controller
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('products', 'public');
-            $validated['image_url'] = asset('storage/' . $path);
+            $validated['image_url'] = rtrim(config('app.url'), '/') . '/storage/' . $path;
         }
 
         if ($request->hasFile('image_2')) {
             $path2 = $request->file('image_2')->store('products', 'public');
-            $validated['image_url_2'] = asset('storage/' . $path2);
+            $validated['image_url_2'] = rtrim(config('app.url'), '/') . '/storage/' . $path2;
         }
 
         $product = Product::create($validated);
@@ -53,12 +53,12 @@ class ProductController extends Controller
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('products', 'public');
-            $validated['image_url'] = asset('storage/' . $path);
+            $validated['image_url'] = rtrim(config('app.url'), '/') . '/storage/' . $path;
         }
 
         if ($request->hasFile('image_2')) {
             $path2 = $request->file('image_2')->store('products', 'public');
-            $validated['image_url_2'] = asset('storage/' . $path2);
+            $validated['image_url_2'] = rtrim(config('app.url'), '/') . '/storage/' . $path2;
         }
 
         $product->update($validated);

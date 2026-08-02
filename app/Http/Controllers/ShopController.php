@@ -59,7 +59,7 @@ class ShopController extends Controller
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('shops', 'public');
-            $validated['image_url'] = asset('storage/' . $path);
+            $validated['image_url'] = rtrim(config('app.url'), '/') . '/storage/' . $path;
         }
 
         $validated['owner_id'] = $request->user()->id;
@@ -73,7 +73,7 @@ class ShopController extends Controller
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('shops', 'public');
-            $validated['image_url'] = asset('storage/' . $path);
+            $validated['image_url'] = rtrim(config('app.url'), '/') . '/storage/' . $path;
         }
 
         $shop->update($validated);
