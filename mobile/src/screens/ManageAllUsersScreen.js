@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, TextInput, ScrollView, StatusBar } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Search as SearchIcon, User, Edit, Trash2, Plus, UserCog } from 'lucide-react-native';
@@ -20,6 +20,7 @@ const ManageAllUsersScreen = ({ navigation }) => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const isFirstRun = useRef(true);
 
   const fetchUsers = async (pageNumber = 1, search = searchQuery, role = selectedRole) => {
     if (pageNumber === 1) {
@@ -59,7 +60,13 @@ const ManageAllUsersScreen = ({ navigation }) => {
 
   // Debounce search input and re-run the filter server-side, since the
   // backend already supports `search`/`role` and local pages are incomplete.
+  // Skip the initial mount — useFocusEffect above already handles that load,
+  // otherwise both fire together and the list visibly reloads twice.
   useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
     const handle = setTimeout(() => {
       fetchUsers(1, searchQuery, selectedRole);
     }, 350);

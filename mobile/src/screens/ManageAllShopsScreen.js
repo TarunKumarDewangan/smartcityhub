@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert, TextInput, ScrollView, StatusBar, Switch } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Search as SearchIcon, ShoppingBag, Edit, Trash2 } from 'lucide-react-native';
@@ -18,6 +18,7 @@ const ManageAllShopsScreen = ({ navigation }) => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const isFirstRun = useRef(true);
 
   const fetchShops = async (pageNumber = 1, search = searchQuery, status = selectedStatus) => {
     if (pageNumber === 1) {
@@ -54,7 +55,14 @@ const ManageAllShopsScreen = ({ navigation }) => {
     }, [])
   );
 
+  // Debounced re-fetch when search/filter actually change — skip on the
+  // initial mount since useFocusEffect above already handles that load,
+  // otherwise both fire together and the list visibly reloads twice.
   useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
     const handle = setTimeout(() => {
       fetchShops(1, searchQuery, selectedStatus);
     }, 350);

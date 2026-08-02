@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, StatusBar, Modal, TextInput } from 'react-native';
-import { ShoppingBag, ChevronLeft, Star, X, User } from 'lucide-react-native';
+import ImageViewing from 'react-native-image-viewing';
+import { ShoppingBag, ChevronLeft, Star, X, User, Expand } from 'lucide-react-native';
 import apiClient from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -16,7 +17,16 @@ const ProductDetailScreen = ({ route, navigation }) => {
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState(0);
   const { theme, isDark } = useTheme();
+
+  const images = product ? [product.image_url, product.image_url_2].filter(Boolean) : [];
+
+  const openViewer = (index) => {
+    setViewerIndex(index);
+    setViewerVisible(true);
+  };
 
   useEffect(() => {
     fetchProduct();
@@ -90,12 +100,27 @@ const ProductDetailScreen = ({ route, navigation }) => {
         {/* Compact Image Header */}
         <View style={[styles.imageHeader, { backgroundColor: theme.divider }]}>
           {product.image_url ? (
-            <Image source={{ uri: product.image_url }} style={styles.mainImage} />
+            <TouchableOpacity activeOpacity={0.9} style={styles.mainImage} onPress={() => openViewer(0)}>
+              <Image source={{ uri: product.image_url }} style={styles.mainImage} />
+              <View style={[styles.expandHint, { backgroundColor: 'rgba(0,0,0,0.45)' }]}>
+                <Expand size={14} color="#fff" />
+              </View>
+            </TouchableOpacity>
           ) : (
             <View style={[styles.placeholderImage, { backgroundColor: theme.divider }]}>
               <ShoppingBag size={60} color={theme.iconDefault} />
             </View>
           )}
+
+          {images.length > 1 && (
+            <TouchableOpacity style={[styles.secondThumb, { borderColor: theme.card }]} onPress={() => openViewer(1)}>
+              <Image source={{ uri: product.image_url_2 }} style={styles.secondThumbImage} />
+              <View style={styles.secondThumbOverlay}>
+                <Text style={styles.secondThumbText}>+{images.length - 1}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity style={[styles.backBtn, { backgroundColor: theme.card }]} onPress={() => navigation.goBack()}>
             <ChevronLeft size={22} color={theme.text} />
           </TouchableOpacity>
@@ -214,6 +239,13 @@ const ProductDetailScreen = ({ route, navigation }) => {
               </View>
           </View>
       </Modal>
+
+      <ImageViewing
+        images={images.map(uri => ({ uri }))}
+        imageIndex={viewerIndex}
+        visible={viewerVisible}
+        onRequestClose={() => setViewerVisible(false)}
+      />
     </View>
   );
 };
@@ -226,6 +258,11 @@ const styles = StyleSheet.create({
   placeholderImage: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   backBtn: { position: 'absolute', top: 50, left: 15, borderRadius: 10, padding: 6, elevation: 3 },
   topRightMenu: { position: 'absolute', top: 50, right: 15, zIndex: 10 },
+  expandHint: { position: 'absolute', bottom: 12, right: 12, padding: 6, borderRadius: 8 },
+  secondThumb: { position: 'absolute', bottom: 12, left: 12, width: 56, height: 56, borderRadius: 10, overflow: 'hidden', borderWidth: 2 },
+  secondThumbImage: { width: '100%', height: '100%' },
+  secondThumbOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  secondThumbText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   
   infoSection: { padding: 20, marginTop: -25, borderTopLeftRadius: 25, borderTopRightRadius: 25 },
   priceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
